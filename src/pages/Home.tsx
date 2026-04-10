@@ -72,7 +72,7 @@ export default function Home() {
     fetchItems();
   }, [query, page, mode]);
 
-  const featuredItem = items.length > 0 && !query && page === 1 ? items[0] : null;
+  const featuredItem = items.length > 0 && !query ? items[0] : null;
   const gridItems = featuredItem ? items.slice(1) : items;
 
   return (
