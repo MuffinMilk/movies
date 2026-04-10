@@ -17,6 +17,29 @@ export interface MovieDetails extends Movie {
   tagline: string;
 }
 
+export interface Show {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+}
+
+export interface ShowDetails extends Show {
+  episode_run_time: number[];
+  genres: { id: number; name: string }[];
+  tagline: string;
+  number_of_seasons: number;
+  seasons: {
+    id: number;
+    name: string;
+    season_number: number;
+    episode_count: number;
+  }[];
+}
+
 export const getPopularMovies = async (page: number = 1): Promise<Movie[]> => {
   const res = await fetch(`${BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=${page}`);
   if (!res.ok) throw new Error('Failed to fetch popular movies');
@@ -34,6 +57,26 @@ export const searchMovies = async (query: string, page: number = 1): Promise<Mov
 export const getMovieDetails = async (id: string): Promise<MovieDetails> => {
   const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`);
   if (!res.ok) throw new Error('Failed to fetch movie details');
+  return res.json();
+};
+
+export const getPopularShows = async (page: number = 1): Promise<Show[]> => {
+  const res = await fetch(`${BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=${page}`);
+  if (!res.ok) throw new Error('Failed to fetch popular shows');
+  const data = await res.json();
+  return data.results;
+};
+
+export const searchShows = async (query: string, page: number = 1): Promise<Show[]> => {
+  const res = await fetch(`${BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`);
+  if (!res.ok) throw new Error('Failed to search shows');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getShowDetails = async (id: string): Promise<ShowDetails> => {
+  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) throw new Error('Failed to fetch show details');
   return res.json();
 };
 
