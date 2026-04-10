@@ -1,5 +1,5 @@
 const TMDB_API_KEY = '1070730380f5fee0d87cf0382670b255';
-const BASE_URL = 'https://api.themoviedb.org/3';
+const BASE_URL = '/api/tmdb';
 
 export interface Movie {
   id: number;
@@ -39,5 +39,5 @@ export const getMovieDetails = async (id: string): Promise<MovieDetails> => {
 
 export const getImageUrl = (path: string | null, size: 'w500' | 'original' = 'w500') => {
   if (!path) return 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=500&q=80';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
+  return `/api/tmdb-image/${size}${path}`;
 };
