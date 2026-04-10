@@ -67,6 +67,55 @@ export const getPopularShows = async (page: number = 1): Promise<Show[]> => {
   return data.results;
 };
 
+export const getTrending = async (): Promise<(Movie | Show)[]> => {
+  const res = await fetch(`${BASE_URL}/trending/all/week?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) throw new Error('Failed to fetch trending');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getNetflixOriginals = async (): Promise<Show[]> => {
+  const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_networks=213`);
+  if (!res.ok) throw new Error('Failed to fetch originals');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getTopRatedMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) throw new Error('Failed to fetch top rated');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getActionMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=28`);
+  if (!res.ok) throw new Error('Failed to fetch action movies');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getComedyMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=35`);
+  if (!res.ok) throw new Error('Failed to fetch comedy movies');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getHorrorMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=27`);
+  if (!res.ok) throw new Error('Failed to fetch horror movies');
+  const data = await res.json();
+  return data.results;
+};
+
+export const getRomanceMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=10749`);
+  if (!res.ok) throw new Error('Failed to fetch romance movies');
+  const data = await res.json();
+  return data.results;
+};
+
 export const searchShows = async (query: string, page: number = 1): Promise<Show[]> => {
   const res = await fetch(`${BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`);
   if (!res.ok) throw new Error('Failed to search shows');
