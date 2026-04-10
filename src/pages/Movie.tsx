@@ -158,9 +158,13 @@ export default function Movie() {
             <iframe
               src={iframeUrl}
               className="w-full h-full"
-              allowFullScreen
+              allowFullScreen={true}
+              webkitallowfullscreen="true"
+              mozallowfullscreen="true"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               title="Movie Player"
+              frameBorder="0"
+              scrolling="no"
             />
           </div>
           <p className="text-center text-sm text-gray-500 mt-4">
