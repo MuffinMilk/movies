@@ -14,6 +14,7 @@ import {
   searchShows,
   getImageUrl 
 } from '../lib/tmdb';
+import { getContinueWatching } from '../lib/storage';
 import MovieCard from '../components/MovieCard';
 import ShowCard from '../components/ShowCard';
 import Row from '../components/Row';
@@ -30,6 +31,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<(Movie | Show)[]>([]);
   
   // Netflix layout state
+  const [continueWatching, setContinueWatching] = useState<(Movie | Show)[]>([]);
   const [trending, setTrending] = useState<(Movie | Show)[]>([]);
   const [originals, setOriginals] = useState<Show[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
@@ -52,6 +54,9 @@ export default function Home() {
           ]);
           setSearchResults([...movieRes, ...showRes].sort((a, b) => b.vote_average - a.vote_average));
         } else {
+          // Load continue watching from local storage
+          setContinueWatching(getContinueWatching());
+
           // Fetch all Netflix rows
           const [
             trendingData,
@@ -180,6 +185,9 @@ export default function Home() {
 
       {/* Rows */}
       <div className="flex flex-col gap-8 -mt-24 relative z-20">
+        {continueWatching.length > 0 && (
+          <Row title="Continue Watching" items={continueWatching} />
+        )}
         <Row title="Trending Now" items={trending} />
         <Row title="Awdres Originals" items={originals} />
         <Row title="Top Rated" items={topRated} />

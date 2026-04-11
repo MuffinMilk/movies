@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShowDetails, getShowDetails, getImageUrl } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
+import { saveToContinueWatching } from '../lib/storage';
 import { Loader2, ArrowLeft, Star, Calendar } from 'lucide-react';
 
 export default function Show() {
@@ -24,6 +25,7 @@ export default function Show() {
       try {
         const data = await getShowDetails(id);
         setShow(data);
+        saveToContinueWatching(data);
         if (data.seasons && data.seasons.length > 0) {
           // Find the first season that isn't season 0 (specials)
           const firstRealSeason = data.seasons.find(s => s.season_number > 0) || data.seasons[0];

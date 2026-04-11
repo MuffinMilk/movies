@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MovieDetails, getMovieDetails, getImageUrl } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
+import { saveToContinueWatching } from '../lib/storage';
 import { Loader2, ArrowLeft, Star, Clock, Calendar } from 'lucide-react';
 
 export default function Movie() {
@@ -22,6 +23,7 @@ export default function Movie() {
       try {
         const data = await getMovieDetails(id);
         setMovie(data);
+        saveToContinueWatching(data);
       } catch (err) {
         setError('Failed to load movie details.');
       } finally {
