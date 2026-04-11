@@ -51,7 +51,7 @@ export default function Row({ title, items }: RowProps) {
           {items.map((item) => {
             const isMovie = 'title' in item;
             return (
-              <div key={`${isMovie ? 'movie' : 'tv'}-${item.id}`} className="min-w-[160px] md:min-w-[200px] lg:min-w-[240px] snap-start transition-transform duration-300 hover:scale-105 hover:z-50">
+              <div key={`${isMovie ? 'movie' : 'tv'}-${item.id}`} className="w-[160px] md:w-[200px] lg:w-[240px] flex-none snap-start transition-transform duration-300 hover:scale-105 hover:z-50">
                 {isMovie ? (
                   <MovieCard movie={item as Movie} />
                 ) : (
