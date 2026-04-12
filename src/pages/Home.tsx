@@ -14,7 +14,7 @@ import {
   searchShows,
   getImageUrl 
 } from '../lib/tmdb';
-import { getContinueWatching } from '../lib/storage';
+import { getContinueWatching, removeFromContinueWatching } from '../lib/storage';
 import MovieCard from '../components/MovieCard';
 import ShowCard from '../components/ShowCard';
 import Row from '../components/Row';
@@ -39,6 +39,11 @@ export default function Home() {
   const [comedy, setComedy] = useState<Movie[]>([]);
   const [horror, setHorror] = useState<Movie[]>([]);
   const [romance, setRomance] = useState<Movie[]>([]);
+
+  const handleRemoveFromContinueWatching = (id: number) => {
+    removeFromContinueWatching(id);
+    setContinueWatching(getContinueWatching());
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -186,7 +191,11 @@ export default function Home() {
       {/* Rows */}
       <div className="flex flex-col gap-8 -mt-24 relative z-20">
         {continueWatching.length > 0 && (
-          <Row title="Continue Watching" items={continueWatching} />
+          <Row 
+            title="Continue Watching" 
+            items={continueWatching} 
+            onRemoveItem={handleRemoveFromContinueWatching}
+          />
         )}
         <Row title="Trending Now" items={trending} />
         <Row title="Awdres Originals" items={originals} />

@@ -26,3 +26,13 @@ export const saveToContinueWatching = (item: Movie | Show) => {
     console.error('Failed to save to continue watching', e);
   }
 };
+
+export const removeFromContinueWatching = (id: number) => {
+  try {
+    const current = getContinueWatching();
+    const filtered = current.filter(i => i.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  } catch (e) {
+    console.error('Failed to remove from continue watching', e);
+  }
+};
