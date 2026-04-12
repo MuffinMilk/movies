@@ -170,17 +170,17 @@ export default function Home() {
               <div className="flex items-center gap-4">
                 <Link 
                   to={`/show/${featuredItem.id}`} 
-                  className="flex items-center gap-2 bg-white text-black hover:bg-white/80 px-6 md:px-8 py-3 rounded-md font-bold text-lg transition-all"
+                  className="group flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 px-8 py-3.5 rounded-full font-bold text-lg transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
                 >
-                  <Play className="w-6 h-6 fill-current" />
-                  Play
+                  <Play className="w-6 h-6 fill-current transition-transform group-hover:scale-110" />
+                  Watch Now
                 </Link>
                 <Link 
                   to={`/show/${featuredItem.id}`} 
-                  className="flex items-center gap-2 bg-gray-500/70 text-white hover:bg-gray-500/50 px-6 md:px-8 py-3 rounded-md font-bold text-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 bg-white/10 text-white hover:bg-white hover:text-black border border-white/20 px-8 py-3.5 rounded-full font-bold text-lg transition-all duration-300 backdrop-blur-md hover:scale-105"
                 >
                   <Info className="w-6 h-6" />
-                  More Info
+                  Details
                 </Link>
               </div>
             </div>
