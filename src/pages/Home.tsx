@@ -10,6 +10,7 @@ import {
   getComedyMovies,
   getHorrorMovies,
   getRomanceMovies,
+  getNowPlayingMovies,
   searchMovies,
   searchShows,
   getImageUrl 
@@ -32,6 +33,7 @@ export default function Home() {
   
   // Netflix layout state
   const [continueWatching, setContinueWatching] = useState<(Movie | Show)[]>([]);
+  const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
   const [trending, setTrending] = useState<(Movie | Show)[]>([]);
   const [originals, setOriginals] = useState<Show[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
@@ -64,6 +66,7 @@ export default function Home() {
 
           // Fetch all Netflix rows
           const [
+            nowPlayingData,
             trendingData,
             originalsData,
             topRatedData,
@@ -72,6 +75,7 @@ export default function Home() {
             horrorData,
             romanceData
           ] = await Promise.all([
+            getNowPlayingMovies(),
             getTrending(),
             getNetflixOriginals(),
             getTopRatedMovies(),
@@ -81,6 +85,7 @@ export default function Home() {
             getRomanceMovies()
           ]);
           
+          setNowPlaying(nowPlayingData);
           setTrending(trendingData);
           setOriginals(originalsData);
           setTopRated(topRatedData);
@@ -144,44 +149,44 @@ export default function Home() {
   }
 
   // NETFLIX LAYOUT VIEW
-  const featuredItem = originals.length > 0 ? originals[Math.floor(Math.random() * Math.min(originals.length, 5))] : null;
+  const featuredItem = nowPlaying.length > 0 ? nowPlaying[0] : null;
 
   return (
     <div className="w-full pb-12">
       {/* Hero Section */}
       {featuredItem && (
-        <div className="relative w-full h-[85vh] mb-8 overflow-hidden">
+        <div className="relative w-full h-[60vh] min-h-[500px] mb-8 overflow-hidden rounded-2xl border border-white/5 shadow-2xl">
           <img 
             src={getImageUrl(featuredItem.backdrop_path, 'original')} 
-            alt={featuredItem.name}
+            alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent flex" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f0f]/90 via-[#0f0f0f]/40 to-transparent" />
           
-          <div className="absolute bottom-[20%] left-0 w-full px-4 md:px-12 lg:px-16">
+          <div className="absolute bottom-12 left-0 w-full px-8 md:px-12 flex flex-col items-start">
             <div className="max-w-2xl">
-              <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-lg">
-                {featuredItem.name}
+              <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
+                <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
+                  {'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                </span>
               </h2>
-              <p className="text-gray-200 text-lg md:text-xl line-clamp-3 mb-8 drop-shadow-md font-medium">
+              <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed">
                 {featuredItem.overview}
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <Link 
                   to={`/show/${featuredItem.id}`} 
-                  className="group flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 px-8 py-3.5 rounded-full font-bold text-lg transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+                  className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2 rounded-md font-bold text-sm transition-all"
                 >
-                  <Play className="w-6 h-6 fill-current transition-transform group-hover:scale-110" />
-                  Watch Now
+                  <Play className="w-4 h-4 fill-current" />
+                  Play
                 </Link>
-                <Link 
-                  to={`/show/${featuredItem.id}`} 
-                  className="flex items-center gap-2 bg-white/10 text-white hover:bg-white hover:text-black border border-white/20 px-8 py-3.5 rounded-full font-bold text-lg transition-all duration-300 backdrop-blur-md hover:scale-105"
+                <button 
+                  className="flex items-center justify-center bg-white/10 text-white hover:bg-white/20 border border-white/20 w-9 h-9 rounded-md transition-all backdrop-blur-md"
                 >
-                  <Info className="w-6 h-6" />
-                  Details
-                </Link>
+                  <span className="text-lg font-light leading-none">+</span>
+                </button>
               </div>
             </div>
           </div>
@@ -189,7 +194,7 @@ export default function Home() {
       )}
 
       {/* Rows */}
-      <div className="flex flex-col gap-8 -mt-24 relative z-20">
+      <div className="flex flex-col gap-6 relative z-20">
         {continueWatching.length > 0 && (
           <Row 
             title="Continue Watching" 
@@ -197,8 +202,9 @@ export default function Home() {
             onRemoveItem={handleRemoveFromContinueWatching}
           />
         )}
+        <Row title="In theater now" items={nowPlaying.slice(1)} />
         <Row title="Trending Now" items={trending} />
-        <Row title="Awdres Originals" items={originals} />
+        <Row title="StreamEx Originals" items={originals} />
         <Row title="Top Rated" items={topRated} />
         <Row title="Action Thrillers" items={action} />
         <Row title="Comedies" items={comedy} />

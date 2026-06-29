@@ -1,5 +1,5 @@
 const TMDB_API_KEY = '1070730380f5fee0d87cf0382670b255';
-const BASE_URL = '/api/tmdb';
+const BASE_URL = 'https://api.themoviedb.org/3';
 
 export interface Movie {
   id: number;
@@ -15,6 +15,9 @@ export interface MovieDetails extends Movie {
   runtime: number;
   genres: { id: number; name: string }[];
   tagline: string;
+  videos?: { results: any[] };
+  credits?: { cast: any[] };
+  images?: { logos: any[] };
 }
 
 export interface Show {
@@ -38,6 +41,9 @@ export interface ShowDetails extends Show {
     season_number: number;
     episode_count: number;
   }[];
+  videos?: { results: any[] };
+  credits?: { cast: any[] };
+  images?: { logos: any[] };
 }
 
 export const getPopularMovies = async (page: number = 1): Promise<Movie[]> => {
@@ -55,7 +61,7 @@ export const searchMovies = async (query: string, page: number = 1): Promise<Mov
 };
 
 export const getMovieDetails = async (id: string): Promise<MovieDetails> => {
-  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`);
+  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images&include_image_language=en,null`);
   if (!res.ok) throw new Error('Failed to fetch movie details');
   return res.json();
 };
@@ -124,12 +130,33 @@ export const searchShows = async (query: string, page: number = 1): Promise<Show
 };
 
 export const getShowDetails = async (id: string): Promise<ShowDetails> => {
-  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`);
+  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images&include_image_language=en,null`);
   if (!res.ok) throw new Error('Failed to fetch show details');
   return res.json();
 };
 
+export const getNowPlayingMovies = async (): Promise<Movie[]> => {
+  const res = await fetch(`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}`);
+  if (!res.ok) throw new Error('Failed to fetch now playing movies');
+  const data = await res.json();
+  return data.results;
+};
+
+export const searchMulti = async (query: string, page: number = 1): Promise<(Movie | Show)[]> => {
+  const res = await fetch(`${BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`);
+  if (!res.ok) throw new Error('Failed to search');
+  const data = await res.json();
+  return data.results.filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
+};
+
+export const getAnime = async (page: number = 1): Promise<Show[]> => {
+  const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_genres=16&with_original_language=ja&page=${page}`);
+  if (!res.ok) throw new Error('Failed to fetch anime');
+  const data = await res.json();
+  return data.results;
+};
+
 export const getImageUrl = (path: string | null, size: 'w500' | 'original' = 'w500') => {
   if (!path) return 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=500&q=80';
-  return `/api/tmdb-image/${size}${path}`;
+  return `https://image.tmdb.org/t/p/${size}${path}`;
 };

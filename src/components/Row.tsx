@@ -12,7 +12,6 @@ interface RowProps {
 
 export default function Row({ title, items, onRemoveItem }: RowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
-  const [isMoved, setIsMoved] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, item: Movie | Show } | null>(null);
 
   useEffect(() => {
@@ -22,7 +21,6 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
   }, []);
 
   const handleClick = (direction: 'left' | 'right') => {
-    setIsMoved(true);
     if (rowRef.current) {
       const { scrollLeft, clientWidth } = rowRef.current;
       const scrollTo = direction === 'left' 
@@ -36,24 +34,32 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="mb-8 relative group">
-      <h2 className="text-xl md:text-2xl font-semibold text-white mb-4 px-4 md:px-12 transition-colors hover:text-gray-300">
-        {title}
-      </h2>
+    <div className="mb-6 relative group">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h2 className="text-xl font-bold text-white tracking-tight">
+          {title}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => handleClick('left')}
+            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-white/5 p-1.5 rounded-full text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => handleClick('right')}
+            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-white/5 p-1.5 rounded-full text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
       
       <div className="relative">
-        {/* Left Arrow */}
-        <div 
-          className={`absolute top-0 bottom-0 left-0 z-40 w-12 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-black/80 ${!isMoved && 'hidden'}`}
-          onClick={() => handleClick('left')}
-        >
-          <ChevronLeft className="w-8 h-8 text-white" />
-        </div>
-
         {/* Scrollable Row */}
         <div 
           ref={rowRef}
-          className="flex items-center gap-4 overflow-x-scroll scrollbar-hide px-4 md:px-12 pb-4 pt-2 snap-x"
+          className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-4 snap-x"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item) => {
@@ -61,7 +67,7 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
             return (
               <div 
                 key={`${isMovie ? 'movie' : 'tv'}-${item.id}`} 
-                className="w-[160px] md:w-[200px] lg:w-[240px] flex-none snap-start transition-transform duration-300 hover:scale-105 hover:z-50"
+                className="w-[160px] md:w-[200px] lg:w-[220px] flex-none snap-start"
                 onContextMenu={(e) => {
                   if (onRemoveItem) {
                     e.preventDefault();
@@ -77,14 +83,6 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
               </div>
             );
           })}
-        </div>
-
-        {/* Right Arrow */}
-        <div 
-          className="absolute top-0 bottom-0 right-0 z-40 w-12 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-black/80"
-          onClick={() => handleClick('right')}
-        >
-          <ChevronRight className="w-8 h-8 text-white" />
         </div>
       </div>
 
