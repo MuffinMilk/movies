@@ -13,7 +13,7 @@ export default function MediaGrid({ items, title }: MediaGridProps) {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-white mb-6 pl-2 border-l-4 border-white/20">{title}</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const isMovie = 'title' in item;
           const displayTitle = isMovie ? item.title : item.name;
           const date = isMovie ? item.release_date : item.first_air_date;
@@ -21,7 +21,7 @@ export default function MediaGrid({ items, title }: MediaGridProps) {
           
           return (
             <Link
-              key={item.id}
+              key={`${isMovie ? 'movie' : 'tv'}-${item.id}-${index}`}
               to={`/${isMovie ? 'movie' : 'show'}/${item.id}`}
               className="group relative rounded-xl overflow-hidden bg-white/5 border border-white/5 hover:border-white/20 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
             >

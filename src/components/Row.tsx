@@ -62,11 +62,11 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
           className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-4 snap-x"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {items.map((item) => {
+          {items.map((item, index) => {
             const isMovie = 'title' in item;
             return (
               <div 
-                key={`${isMovie ? 'movie' : 'tv'}-${item.id}`} 
+                key={`${isMovie ? 'movie' : 'tv'}-${item.id}-${index}`} 
                 className="w-[160px] md:w-[200px] lg:w-[220px] flex-none snap-start"
                 onContextMenu={(e) => {
                   if (onRemoveItem) {

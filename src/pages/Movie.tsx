@@ -4,10 +4,12 @@ import { MovieDetails, getMovieDetails, getImageUrl } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
 import { saveToContinueWatching } from '../lib/storage';
 import { Loader2, ArrowLeft, Star, Clock, Calendar, Bookmark, Play } from 'lucide-react';
+import { useAudio } from '../context/AudioContext';
 
 export default function Movie() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pauseForVideo, resumeFromVideo } = useAudio();
   
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +50,15 @@ export default function Movie() {
       setShowTrailer(false);
     }
   }, [trailer, watchMode]);
+
+  useEffect(() => {
+    if (watchMode || showTrailer) {
+      pauseForVideo();
+    } else {
+      resumeFromVideo();
+    }
+    return () => resumeFromVideo();
+  }, [watchMode, showTrailer, pauseForVideo, resumeFromVideo]);
 
   if (loading) {
     return (
@@ -110,8 +121,8 @@ export default function Movie() {
       <div className="container mx-auto px-4 md:px-12 pt-32 pb-24 relative z-20  flex flex-col min-h-[90vh] justify-center">
         <div className="max-w-3xl">
           <div className="flex flex-wrap gap-2 mb-6">
-            {movie.genres.map(g => (
-              <span key={g.id} className="px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-xs font-semibold text-gray-200 tracking-wider shadow-lg shadow-black/20">
+            {movie.genres.map((g, index) => (
+              <span key={`${g.id}-${index}`} className="px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-xs font-semibold text-gray-200 tracking-wider shadow-lg shadow-black/20">
                 {g.name}
               </span>
             ))}
@@ -165,8 +176,8 @@ export default function Movie() {
         <div className="relative z-20  container mx-auto px-4 md:px-12 pb-12">
           <h2 className="text-xl font-bold text-white mb-6">Cast</h2>
           <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide">
-            {cast.map((actor: any) => (
-              <div key={actor.id} className="w-28 md:w-32 shrink-0 flex flex-col gap-2">
+            {cast.map((actor: any, index: number) => (
+              <div key={`${actor.id}-${index}`} className="w-28 md:w-32 shrink-0 flex flex-col gap-2">
                 <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#1a1a1a] border border-white/5">
                   <img 
                     src={actor.profile_path ? getImageUrl(actor.profile_path) : `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.name)}&background=1a1a1a&color=fff`} 

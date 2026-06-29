@@ -137,8 +137,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-            {searchResults.map((item) => (
-              <React.Fragment key={`${'title' in item ? 'movie' : 'tv'}-${item.id}`}>
+            {searchResults.map((item, index) => (
+              <React.Fragment key={`${'title' in item ? 'movie' : 'tv'}-${item.id}-${index}`}>
                 {'title' in item ? <MovieCard movie={item as Movie} /> : <ShowCard show={item as Show} />}
               </React.Fragment>
             ))}
@@ -176,7 +176,7 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3">
                 <Link 
-                  to={`/show/${featuredItem.id}`} 
+                  to={`/${'title' in featuredItem ? 'movie' : 'show'}/${featuredItem.id}`} 
                   className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2 rounded-md font-bold text-sm transition-all"
                 >
                   <Play className="w-4 h-4 fill-current" />
@@ -204,7 +204,7 @@ export default function Home() {
         )}
         <Row title="In theater now" items={nowPlaying.slice(1)} />
         <Row title="Trending Now" items={trending} />
-        <Row title="StreamEx Originals" items={originals} />
+        <Row title="Awdrex Originals" items={originals} />
         <Row title="Top Rated" items={topRated} />
         <Row title="Action Thrillers" items={action} />
         <Row title="Comedies" items={comedy} />

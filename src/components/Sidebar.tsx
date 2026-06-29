@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, LayoutGrid, Film, Tv, Sparkles, BookOpen, Music, Radio, Heart, Clock, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Search, LayoutGrid, Film, Tv, Sparkles, BookOpen, Music, Radio, Heart, Clock, FileText, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 
 export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed: (val: boolean) => void }) {
   const location = useLocation();
@@ -25,7 +25,7 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
   };
 
   return (
-    <aside className={`fixed left-0 top-0 bottom-0 bg-black/40 backdrop-blur-2xl z-50 flex flex-col transition-all duration-300 hidden lg:flex border-r border-white/5 shadow-2xl ${collapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`fixed left-0 top-0 bottom-0 bg-black/40 backdrop-blur-2xl z-50 flex flex-col transition-all duration-300 hidden md:flex border-r border-white/5 shadow-2xl ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className="p-6 pb-2">
         <Link to="/" className="flex items-center gap-2 text-white overflow-hidden select-none drop-shadow-md">
           <span className="text-3xl font-black tracking-tighter whitespace-nowrap">awdrex</span>
