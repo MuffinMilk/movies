@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { 
   Movie, 
   Show, 
@@ -13,7 +14,8 @@ import {
   getNowPlayingMovies,
   searchMovies,
   searchShows,
-  getImageUrl 
+  getImageUrl,
+  getMovieDetails
 } from '../lib/tmdb';
 import { getContinueWatching, removeFromContinueWatching } from '../lib/storage';
 import MovieCard from '../components/MovieCard';
@@ -41,6 +43,9 @@ export default function Home() {
   const [comedy, setComedy] = useState<Movie[]>([]);
   const [horror, setHorror] = useState<Movie[]>([]);
   const [romance, setRomance] = useState<Movie[]>([]);
+
+  const [heroMovies, setHeroMovies] = useState<Movie[]>([]);
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   const handleRemoveFromContinueWatching = (id: number) => {
     removeFromContinueWatching(id);
@@ -93,6 +98,12 @@ export default function Home() {
           setComedy(comedyData);
           setHorror(horrorData);
           setRomance(romanceData);
+
+          // Fetch custom hero movies
+          const heroIds = ['1083381', '1339713', '936075', '931285'];
+          const heroDataPromises = heroIds.map(id => getMovieDetails(id).catch(() => null));
+          const resolvedHeroData = (await Promise.all(heroDataPromises)).filter(m => m !== null) as Movie[];
+          setHeroMovies(resolvedHeroData);
         }
       } catch (err) {
         setError('Failed to load content. Please try again later.');
@@ -103,6 +114,15 @@ export default function Home() {
 
     fetchData();
   }, [query]);
+
+  useEffect(() => {
+    if (heroMovies.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentHeroIndex((prev) => (prev + 1) % heroMovies.length);
+      }, 7000); // Switch every 7 seconds
+      return () => clearInterval(interval);
+    }
+  }, [heroMovies.length]);
 
   if (loading) {
     return (
@@ -149,47 +169,79 @@ export default function Home() {
   }
 
   // NETFLIX LAYOUT VIEW
-  const featuredItem = nowPlaying.length > 0 ? nowPlaying[0] : null;
+  const featuredItem = heroMovies.length > 0 ? heroMovies[currentHeroIndex] : (nowPlaying.length > 0 ? nowPlaying[0] : null);
 
   return (
     <div className="w-full pb-12">
       {/* Hero Section */}
       {featuredItem && (
         <div className="relative w-full h-[60vh] min-h-[500px] mb-8 overflow-hidden rounded-2xl border border-white/5 shadow-2xl">
-          <img 
-            src={getImageUrl(featuredItem.backdrop_path, 'original')} 
-            alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent flex" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f0f]/90 via-[#0f0f0f]/40 to-transparent" />
-          
-          <div className="absolute bottom-12 left-0 w-full px-8 md:px-12 flex flex-col items-start">
-            <div className="max-w-2xl">
-              <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
-                <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
-                  {'title' in featuredItem ? featuredItem.title : featuredItem.name}
-                </span>
-              </h2>
-              <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed">
-                {featuredItem.overview}
-              </p>
-              <div className="flex items-center gap-3">
-                <Link 
-                  to={`/${'title' in featuredItem ? 'movie' : 'show'}/${featuredItem.id}`} 
-                  className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2 rounded-md font-bold text-sm transition-all"
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={featuredItem.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5 }}
+              className="absolute inset-0"
+            >
+              <img 
+                src={getImageUrl(featuredItem.backdrop_path, 'original')} 
+                alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent flex" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f0f]/90 via-[#0f0f0f]/40 to-transparent" />
+              
+              <div className="absolute bottom-12 left-0 w-full px-8 md:px-12 flex flex-col items-start z-10">
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.8 }}
+                  className="max-w-2xl"
                 >
-                  <Play className="w-4 h-4 fill-current" />
-                  Play
-                </Link>
-                <button 
-                  className="flex items-center justify-center bg-white/10 text-white hover:bg-white/20 border border-white/20 w-9 h-9 rounded-md transition-all backdrop-blur-md"
-                >
-                  <span className="text-lg font-light leading-none">+</span>
-                </button>
+                  <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
+                      {'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                    </span>
+                  </h2>
+                  <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed">
+                    {featuredItem.overview}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <Link 
+                      to={`/${'title' in featuredItem ? 'movie' : 'show'}/${featuredItem.id}`} 
+                      className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2 rounded-md font-bold text-sm transition-all"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      Play
+                    </Link>
+                    <button 
+                      className="flex items-center justify-center bg-white/10 text-white hover:bg-white/20 border border-white/20 w-9 h-9 rounded-md transition-all backdrop-blur-md"
+                    >
+                      <span className="text-lg font-light leading-none">+</span>
+                    </button>
+                  </div>
+                </motion.div>
               </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Hero Indicator Dots */}
+          {heroMovies.length > 1 && (
+            <div className="absolute bottom-4 right-8 z-20 flex gap-2">
+              {heroMovies.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentHeroIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    idx === currentHeroIndex ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70'
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
             </div>
-          </div>
+          )}
         </div>
       )}
 

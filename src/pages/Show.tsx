@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
 import { ShowDetails, getShowDetails, getImageUrl } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
 import { saveToContinueWatching } from '../lib/storage';
 import { Loader2, ArrowLeft, Star, Clock, Calendar, Bookmark, Play } from 'lucide-react';
-import { useAudio } from '../context/AudioContext';
+import Intro from '../components/Intro';
 
 export default function Show() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { pauseForVideo, resumeFromVideo } = useAudio();
   
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTrailer, setShowTrailer] = useState(false);
   const [watchMode, setWatchMode] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   
   const [selectedSource, setSelectedSource] = useState<Source>(sources[0]);
   const [season, setSeason] = useState<number>(1);
@@ -27,6 +28,7 @@ export default function Show() {
       setLoading(true);
       setError(null);
       setShowTrailer(false);
+      setShowIntro(true);
       try {
         const data = await getShowDetails(id);
         setShow(data);
@@ -49,22 +51,13 @@ export default function Show() {
     || show?.videos?.results?.find(v => v.site === 'YouTube');
 
   useEffect(() => {
-    if (trailer && !watchMode) {
+    if (trailer && !watchMode && !showIntro) {
       const timer = setTimeout(() => setShowTrailer(true), 2000);
       return () => clearTimeout(timer);
     } else {
       setShowTrailer(false);
     }
-  }, [trailer, watchMode]);
-
-  useEffect(() => {
-    if (watchMode || showTrailer) {
-      pauseForVideo();
-    } else {
-      resumeFromVideo();
-    }
-    return () => resumeFromVideo();
-  }, [watchMode, showTrailer, pauseForVideo, resumeFromVideo]);
+  }, [trailer, watchMode, showIntro]);
 
   if (loading) {
     return (
@@ -97,6 +90,17 @@ export default function Show() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
+      <AnimatePresence>
+        {showIntro && (
+          <Intro 
+            key="show-intro" 
+            onComplete={() => setShowIntro(false)} 
+            backgroundUrl={getImageUrl(show.backdrop_path, 'original')}
+            logoUrl={logo ? getImageUrl(logo, 'original') : undefined}
+            title={show.name}
+          />
+        )}
+      </AnimatePresence>
       {/* Fixed Ambient Background */}
       <div className="fixed inset-0 z-0">
         <img 
