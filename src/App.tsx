@@ -14,6 +14,7 @@ import Search from './pages/Search';
 import Movies from './pages/Movies';
 import Shows from './pages/Shows';
 import Anime from './pages/Anime';
+import WarningModal from './components/WarningModal';
 
 export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -23,6 +24,7 @@ export default function App() {
       <div className="flex bg-[#0f0f0f] text-gray-200 font-sans selection:bg-white/30 min-h-screen pt-4 pb-12">
         <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
         <main className={`flex-1 w-full min-w-0 pr-4 md:pr-6 pt-4 transition-all duration-300 ${sidebarCollapsed ? 'pl-4 md:pl-28' : 'pl-4 md:pl-72'}`}>
+          <WarningModal />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />

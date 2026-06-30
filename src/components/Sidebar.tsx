@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, LayoutGrid, Film, Tv, Sparkles, BookOpen, Music, Radio, Heart, Clock, FileText, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { Home, Search, LayoutGrid, Film, Tv, Sparkles, BookOpen, Music, Radio, Heart, Clock, FileText, ChevronLeft, ChevronRight, Play, Pause, Info } from 'lucide-react';
+import CreditsModal from './CreditsModal';
 
 export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed: (val: boolean) => void }) {
   const location = useLocation();
+  const [isCreditsOpen, setIsCreditsOpen] = useState(false);
 
   const box1 = [
     { name: 'Home', path: '/', icon: Home },
@@ -77,12 +79,25 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
         </div>
       </div>
 
+      <div className="p-4 mt-auto">
+        <button
+          onClick={() => setIsCreditsOpen(true)}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold text-[13px] text-gray-400 hover:text-white hover:bg-white/5`}
+          title={collapsed ? 'Credits' : undefined}
+        >
+          <Info className="w-4 h-4 shrink-0" />
+          {!collapsed && <span className="opacity-90">Credits</span>}
+        </button>
+      </div>
+
       <button 
         onClick={() => setCollapsed(!collapsed)}
         className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-xl rounded-md border border-white/10 p-1 text-gray-400 hover:text-white z-50 hover:bg-white/20 transition-all shadow-lg"
       >
         {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
+
+      <CreditsModal isOpen={isCreditsOpen} onClose={() => setIsCreditsOpen(false)} />
     </aside>
   );
 }
