@@ -10,8 +10,9 @@ export default function Intro({ onComplete, backgroundUrl, logoUrl, title }: { o
     const fallbackAudio = 'https://archive.org/download/kane-pixels-backrooms-unfinished-scraped-and-soundtracks/Project_Systems_Test.mp3';
 
     if (title) {
+      const searchTerm = title + ' soundtrack';
       // Try to fetch a soundtrack from iTunes API
-      fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title + ' soundtrack')}&entity=song&limit=1`)
+      fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchTerm)}&entity=song&limit=1`)
         .then(res => res.json())
         .then(data => {
           if (isMounted) {
@@ -40,6 +41,9 @@ export default function Intro({ onComplete, backgroundUrl, logoUrl, title }: { o
     // Play music
     const audio = new Audio(audioUrl);
     audio.volume = 0.5;
+    if (audioUrl === 'https://archive.org/download/kane-pixels-backrooms-unfinished-scraped-and-soundtracks/Project_Systems_Test.mp3') {
+      audio.currentTime = 25; // Start 25 seconds in to get past the silent/slow intro
+    }
     audioRef.current = audio;
     
     // Play on mount
@@ -75,13 +79,7 @@ export default function Intro({ onComplete, backgroundUrl, logoUrl, title }: { o
       }
     }, fadeOutStart);
 
-    // Total duration of the intro before fading out
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 4500); // 4.5 seconds for the intro
-    
     return () => {
-      clearTimeout(timer);
       clearTimeout(fadeTimer);
       if (fadeInterval) clearInterval(fadeInterval);
       if (audioRef.current) {
@@ -89,7 +87,18 @@ export default function Intro({ onComplete, backgroundUrl, logoUrl, title }: { o
         audioRef.current.currentTime = 0;
       }
     };
-  }, [audioUrl, onComplete]);
+  }, [audioUrl]);
+
+  useEffect(() => {
+    // Total duration of the intro before fading out
+    const timer = setTimeout(() => {
+      onComplete();
+    }, 4500); // 4.5 seconds for the intro
+    
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onComplete]);
 
   return (
     <motion.div
@@ -136,3 +145,4 @@ export default function Intro({ onComplete, backgroundUrl, logoUrl, title }: { o
     </motion.div>
   );
 }
+

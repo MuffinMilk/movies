@@ -15,7 +15,8 @@ import {
   searchMovies,
   searchShows,
   getImageUrl,
-  getMovieDetails
+  getMovieDetails,
+  getMovieRating
 } from '../lib/tmdb';
 import { getContinueWatching, removeFromContinueWatching } from '../lib/storage';
 import MovieCard from '../components/MovieCard';
@@ -200,11 +201,26 @@ export default function Home() {
                   transition={{ delay: 0.5, duration: 0.8 }}
                   className="max-w-2xl"
                 >
-                  <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
-                      {'title' in featuredItem ? featuredItem.title : featuredItem.name}
-                    </span>
-                  </h2>
+                  {(featuredItem as any)?.images?.logos?.length > 0 ? (
+                    <img
+                      src={getImageUrl((featuredItem as any).images.logos[0].file_path, 'w500')}
+                      alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                      className="max-w-[400px] w-full h-auto object-contain mb-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"
+                    />
+                  ) : (
+                    <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
+                        {'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                      </span>
+                    </h2>
+                  )}
+                  {getMovieRating((featuredItem as any)?.release_dates) && (
+                    <div className="mb-4">
+                      <span className="px-3 py-1 rounded-sm bg-white/20 border border-white/30 text-xs font-bold text-white shadow-lg backdrop-blur-md">
+                        {getMovieRating((featuredItem as any).release_dates)}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed">
                     {featuredItem.overview}
                   </p>

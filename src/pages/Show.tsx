@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
-import { ShowDetails, getShowDetails, getImageUrl } from '../lib/tmdb';
+import { ShowDetails, getShowDetails, getImageUrl, getShowRating } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
 import { saveToContinueWatching } from '../lib/storage';
 import { Loader2, ArrowLeft, Star, Clock, Calendar, Bookmark, Play } from 'lucide-react';
@@ -137,6 +137,11 @@ export default function Show() {
       <div className="container mx-auto px-4 md:px-12 pt-32 pb-24 relative z-20  flex flex-col min-h-[90vh] justify-center">
         <div className="max-w-3xl">
           <div className="flex flex-wrap gap-2 mb-6">
+            {getShowRating(show.content_ratings) && (
+              <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 text-xs font-bold text-white tracking-wider shadow-lg shadow-black/20">
+                {getShowRating(show.content_ratings)}
+              </span>
+            )}
             {show.genres.map((g, index) => (
               <span key={`${g.id}-${index}`} className="px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-xs font-semibold text-gray-200 tracking-wider shadow-lg shadow-black/20">
                 {g.name}

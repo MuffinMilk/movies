@@ -18,6 +18,7 @@ export interface MovieDetails extends Movie {
   videos?: { results: any[] };
   credits?: { cast: any[] };
   images?: { logos: any[] };
+  release_dates?: { results: any[] };
 }
 
 export interface Show {
@@ -44,6 +45,7 @@ export interface ShowDetails extends Show {
   videos?: { results: any[] };
   credits?: { cast: any[] };
   images?: { logos: any[] };
+  content_ratings?: { results: any[] };
 }
 
 export const getPopularMovies = async (page: number = 1): Promise<Movie[]> => {
@@ -61,7 +63,7 @@ export const searchMovies = async (query: string, page: number = 1): Promise<Mov
 };
 
 export const getMovieDetails = async (id: string): Promise<MovieDetails> => {
-  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images&include_image_language=en,null`);
+  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images,release_dates&include_image_language=en,null`);
   if (!res.ok) throw new Error('Failed to fetch movie details');
   return res.json();
 };
@@ -130,7 +132,7 @@ export const searchShows = async (query: string, page: number = 1): Promise<Show
 };
 
 export const getShowDetails = async (id: string): Promise<ShowDetails> => {
-  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images&include_image_language=en,null`);
+  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits,images,content_ratings&include_image_language=en,null`);
   if (!res.ok) throw new Error('Failed to fetch show details');
   return res.json();
 };
@@ -159,4 +161,20 @@ export const getAnime = async (page: number = 1): Promise<Show[]> => {
 export const getImageUrl = (path: string | null, size: 'w500' | 'original' = 'w500') => {
   if (!path) return 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=500&q=80';
   return `https://image.tmdb.org/t/p/${size}${path}`;
+};
+
+export const getMovieRating = (releaseDates?: { results: any[] }) => {
+  if (!releaseDates?.results) return null;
+  const usRelease = releaseDates.results.find((r: any) => r.iso_3166_1 === 'US');
+  if (usRelease && usRelease.release_dates) {
+    const certification = usRelease.release_dates.find((r: any) => r.certification)?.certification;
+    if (certification) return certification;
+  }
+  return null;
+};
+
+export const getShowRating = (contentRatings?: { results: any[] }) => {
+  if (!contentRatings?.results) return null;
+  const usRating = contentRatings.results.find((r: any) => r.iso_3166_1 === 'US');
+  return usRating?.rating || null;
 };
