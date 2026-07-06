@@ -29,47 +29,40 @@ export default function Show() {
   const [saturation, setSaturation] = useState<number>(125);
   const [contrast, setContrast] = useState<number>(118);
   const [brightness, setBrightness] = useState<number>(104);
-  const [pixelMesh, setPixelMesh] = useState(true);
+  const [pixelMesh, setPixelMesh] = useState(false);
   const [ambientGlow, setAmbientGlow] = useState(true);
 
   const applyPreset = (presetName: string) => {
     setPreset(presetName);
     if (presetName === 'cinematic_hdr') {
-      setContrast(118);
-      setSaturation(125);
-      setBrightness(104);
-      setSharpnessStrength(60);
-    } else if (presetName === 'ai_upscale') {
-      setContrast(114);
-      setSaturation(110);
-      setBrightness(100);
-      setSharpnessStrength(95);
-    } else if (presetName === 'vivid_lumina') {
-      setContrast(106);
-      setSaturation(145);
-      setBrightness(110);
-      setSharpnessStrength(40);
-    } else if (presetName === 'imax_pro') {
-      setContrast(115);
+      setContrast(112);
       setSaturation(118);
-      setBrightness(98);
+      setBrightness(102);
+      setSharpnessStrength(50);
+    } else if (presetName === 'ai_upscale') {
+      setContrast(110);
+      setSaturation(105);
+      setBrightness(100);
       setSharpnessStrength(80);
+    } else if (presetName === 'vivid_lumina') {
+      setContrast(104);
+      setSaturation(135);
+      setBrightness(106);
+      setSharpnessStrength(30);
+    } else if (presetName === 'imax_pro') {
+      setContrast(114);
+      setSaturation(112);
+      setBrightness(98);
+      setSharpnessStrength(70);
     }
   };
 
   const getFilterString = () => {
     if (!is4kActive) return 'none';
-    let filterStr = `contrast(${contrast}%) saturate(${saturation}%) brightness(${brightness}%)`;
-    if (sharpnessStrength > 0) {
-      if (sharpnessStrength > 75) {
-        filterStr += ' url(#ai-sharpen-extreme)';
-      } else if (sharpnessStrength > 35) {
-        filterStr += ' url(#ai-sharpen)';
-      } else {
-        filterStr += ' url(#ai-sharpen-subtle)';
-      }
-    }
-    return filterStr;
+    // Native hardware-accelerated filters: we avoid SVG convolution filters to prevent browser-induced iframe downsampling & blur.
+    // Pristine high-definition details are maintained, with edge sharpness enhanced via clean micro-contrast scaling.
+    const effectiveContrast = contrast + (sharpnessStrength * 0.12);
+    return `contrast(${effectiveContrast}%) saturate(${saturation}%) brightness(${brightness}%)`;
   };
 
   useEffect(() => {
@@ -487,7 +480,7 @@ export default function Show() {
                       }}
                       className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
                     />
-                    <p className="text-[10px] text-gray-500 font-medium">Controls convolution matrices to crisp up lines and edges.</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Fine-tune micro-contrast to beautifully emphasize details and crisp lines.</p>
                   </div>
 
                   {/* Slider 2: Saturation */}
