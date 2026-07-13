@@ -18,7 +18,7 @@ export default function Movie() {
   const [watchMode, setWatchMode] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   
-  const [selectedSource, setSelectedSource] = useState<Source>(sources[0]);
+  const [selectedSource, setSelectedSource] = useState<Source>(sources.find(s => s.id === 'vidlink') || sources[0]);
   const [adShield, setAdShield] = useState(true);
 
   // 4K Dynamic Enhancement & HDR engine states
@@ -277,11 +277,19 @@ export default function Movie() {
                   onChange={(e) => setSelectedSource(sources.find(s => s.id === e.target.value) || sources[0])}
                   className="bg-transparent text-white text-sm font-semibold focus:outline-none cursor-pointer py-1"
                 >
-                  {sources.map(source => (
-                    <option key={source.id} value={source.id} className="bg-[#1a1a1a]">
-                      {source.name} {source.isFrench ? '(FR)' : ''}
-                    </option>
-                  ))}
+                  {sources.map(source => {
+                    let suffix = '';
+                    if (source.id === 'vidlink') suffix = ' ✨ Recommended (Ad-Free)';
+                    else if (source.id === 'rive') suffix = ' 🛡️ Ad-Free & Fast';
+                    else if (source.id === 'mapple') suffix = ' ⚡ Clean & Fast';
+                    else if (source.id === 'embedsu') suffix = ' 🍿 Clean';
+                    
+                    return (
+                      <option key={source.id} value={source.id} className="bg-[#1a1a1a]">
+                        {source.name} {source.isFrench ? '(FR)' : ''}{suffix}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -384,7 +392,7 @@ export default function Movie() {
                   transition: 'filter 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                   transform: is4kActive ? 'scale(1.002)' : 'scale(1)',
                 }}
-                sandbox={adShield ? "allow-scripts allow-same-origin allow-presentation allow-forms" : undefined}
+                sandbox={adShield ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" : undefined}
                 className="w-full h-full relative z-10 bg-black transition-transform duration-500"
                 allowFullScreen={true}
                 allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
@@ -404,7 +412,7 @@ export default function Movie() {
               </div>
               <p className="hidden md:block text-[11px] text-gray-500">
                 {adShield 
-                  ? 'Automatically neutralizing all 3rd-party redirection scripts, popups, and intrusive trackers.' 
+                  ? 'Active in Compatibility Mode: Bypasses "Please disable sandbox" warnings while keeping top-frame redirects fully blocked.' 
                   : 'Warning: 3rd-party popups, redirects, and overlays are currently permitted.'}
               </p>
             </div>
