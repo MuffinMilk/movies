@@ -4,7 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { MovieDetails, getMovieDetails, getImageUrl, getMovieRating } from '../lib/tmdb';
 import { sources, Source } from '../lib/sources';
 import { saveToContinueWatching } from '../lib/storage';
-import { Loader2, ArrowLeft, Star, Clock, Calendar, Bookmark, Play, Sparkles, Download, ChevronDown, CheckCircle2, Zap, FileVideo, Link2, Server, X, Shield } from 'lucide-react';
+import { Loader2, ArrowLeft, Star, Clock, Calendar, Bookmark, Play, Sparkles, Download, ChevronDown, CheckCircle2, Zap, FileVideo, Link2, Server, X } from 'lucide-react';
 import Intro from '../components/Intro';
 
 export default function Movie() {
@@ -18,8 +18,7 @@ export default function Movie() {
   const [watchMode, setWatchMode] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   
-  const [selectedSource, setSelectedSource] = useState<Source>(sources.find(s => s.id === 'vidlink') || sources[0]);
-  const [adShield, setAdShield] = useState(true);
+  const [selectedSource, setSelectedSource] = useState<Source>(sources[0]);
 
   // 4K Dynamic Enhancement & HDR engine states
   const [is4kActive, setIs4kActive] = useState(false);
@@ -277,40 +276,13 @@ export default function Movie() {
                   onChange={(e) => setSelectedSource(sources.find(s => s.id === e.target.value) || sources[0])}
                   className="bg-transparent text-white text-sm font-semibold focus:outline-none cursor-pointer py-1"
                 >
-                  {sources.map(source => {
-                    let suffix = '';
-                    if (source.id === 'vidlink') suffix = ' ✨ Recommended (Ad-Free)';
-                    else if (source.id === 'rive') suffix = ' 🛡️ Ad-Free & Fast';
-                    else if (source.id === 'mapple') suffix = ' ⚡ Clean & Fast';
-                    else if (source.id === 'embedsu') suffix = ' 🍿 Clean';
-                    
-                    return (
-                      <option key={source.id} value={source.id} className="bg-[#1a1a1a]">
-                        {source.name} {source.isFrench ? '(FR)' : ''}{suffix}
-                      </option>
-                    );
-                  })}
+                  {sources.map(source => (
+                    <option key={source.id} value={source.id} className="bg-[#1a1a1a]">
+                      {source.name} {source.isFrench ? '(FR)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
-
-              {/* Ad Shield Toggle */}
-              <button
-                onClick={() => setAdShield(!adShield)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
-                  adShield 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 shadow-lg shadow-emerald-500/5' 
-                    : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
-                }`}
-                title={adShield ? "Ad Shield is ACTIVE. Click to disable." : "Ad Shield is DISABLED. Click to enable."}
-              >
-                <Shield className={`w-4 h-4 ${adShield ? 'animate-pulse text-emerald-400' : 'text-red-400'}`} />
-                <span>Ad Shield</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
-                  adShield ? 'bg-emerald-500/25 text-emerald-300' : 'bg-red-500/25 text-red-300'
-                }`}>
-                  {adShield ? 'ACTIVE' : 'OFF'}
-                </span>
-              </button>
 
               {/* 4K Enhancer Button */}
               <button
@@ -392,7 +364,6 @@ export default function Movie() {
                   transition: 'filter 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                   transform: is4kActive ? 'scale(1.002)' : 'scale(1)',
                 }}
-                sandbox={adShield ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" : undefined}
                 className="w-full h-full relative z-10 bg-black transition-transform duration-500"
                 allowFullScreen={true}
                 allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
@@ -400,21 +371,6 @@ export default function Movie() {
                 frameBorder="0"
                 scrolling="no"
               />
-            </div>
-
-            {/* Ad Shield Status Indicator */}
-            <div className="mt-3 flex items-center justify-between text-xs text-gray-400 bg-[#0d0d0d]/60 border border-white/5 rounded-xl px-4 py-3 backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <Shield className={`w-4 h-4 ${adShield ? 'text-emerald-400 animate-pulse' : 'text-red-400'}`} />
-                <span>
-                  Ad Shield sandbox protection is <strong className={adShield ? "text-emerald-400" : "text-red-400"}>{adShield ? 'Active & Running' : 'Deactivated'}</strong>.
-                </span>
-              </div>
-              <p className="hidden md:block text-[11px] text-gray-500">
-                {adShield 
-                  ? 'Active in Compatibility Mode: Bypasses "Please disable sandbox" warnings while keeping top-frame redirects fully blocked.' 
-                  : 'Warning: 3rd-party popups, redirects, and overlays are currently permitted.'}
-              </p>
             </div>
           </div>
 
