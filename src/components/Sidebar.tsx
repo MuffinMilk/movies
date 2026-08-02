@@ -79,10 +79,10 @@ export default function Sidebar({ collapsed, setCollapsed }: { collapsed: boolea
         </div>
       </div>
 
-      <div className="p-4 mt-auto">
+      <div className="p-4 mt-auto space-y-1">
         <button
           onClick={() => setIsCreditsOpen(true)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold text-[13px] text-gray-400 hover:text-white hover:bg-white/5`}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-semibold text-[13px] text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer`}
           title={collapsed ? 'Credits' : undefined}
         >
           <Info className="w-4 h-4 shrink-0" />

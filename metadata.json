@@ -1,5 +1,6 @@
 {
-  "name": "Awdres Movies",
-  "description": "A sleek, modern movie streaming website utilizing the Nova sources.",
-  "requestFramePermissions": []
+  "name": "Awdrex TV",
+  "description": "A sleek, dark-themed streaming application featuring interactive drawers, AI source scanning, customized video player, and rich media hubs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

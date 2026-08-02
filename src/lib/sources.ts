@@ -37,5 +37,6 @@ export const sources: Source[] = [
   { id: 'spenflix', name: 'Spenflix', isFrench: false, url: 'https://spencerdevs.xyz/movie/{id}', tvUrl: 'https://spencerdevs.xyz/tv/{id}/{season}/{episode}' },
   { id: 'frembed', name: 'Frembed', isFrench: true, url: 'https://frembed.icu/api/film.php?id={id}', tvUrl: 'https://frembed.icu/api/serie.php?id={id}&sa={season}&epi={episode}' },
   { id: 'uembed', name: 'UEmbed (premium)', isFrench: false, url: 'https://uembed.site/?id={id}&apikey=thisisforsurenotapremiumkey_right?', tvUrl: 'https://uembed.site/?id={id}&s={season}&e={episode}&apikey=thisisforsurenotapremiumkey_right?' },
-  { id: 'vidsrccx', name: 'VidSrcCX', isFrench: false, url: 'https://vidsrc.cx/embed/movie/{id}', tvUrl: 'https://vidsrc.cx/embed/tv/{id}/{season}/{episode}' }
+  { id: 'vidsrccx', name: 'VidSrcCX', isFrench: false, url: 'https://vidsrc.cx/embed/movie/{id}', tvUrl: 'https://vidsrc.cx/embed/tv/{id}/{season}/{episode}' },
+  { id: 'jellyfin', name: 'Custom Jellyfin / Local Server', isFrench: false, url: '{customUrl}', tvUrl: '{customUrl}' }
 ];

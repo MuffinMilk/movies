@@ -1,12 +1,5 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import Home from './pages/Home';
 import Movie from './pages/Movie';
 import Show from './pages/Show';
@@ -17,20 +10,20 @@ import Anime from './pages/Anime';
 import WarningModal from './components/WarningModal';
 
 export default function App() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   return (
     <Router>
-      <div className="flex bg-[#0f0f0f] text-gray-200 font-sans selection:bg-white/30 min-h-screen pt-4 pb-12">
-        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
-        <main className={`flex-1 w-full min-w-0 pr-4 md:pr-6 pt-4 transition-all duration-300 ${sidebarCollapsed ? 'pl-4 md:pl-28' : 'pl-4 md:pl-72'}`}>
+      <div className="bg-[#0a0a0a] text-gray-200 font-sans selection:bg-white/30 min-h-screen relative overflow-x-hidden">
+        <Header />
+        <main className="w-full min-h-screen">
           <WarningModal />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/search" element={<Search />} />
+            <Route path="/live" element={<Home />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/shows" element={<Shows />} />
             <Route path="/anime" element={<Anime />} />
+            <Route path="/library" element={<Home />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/movie/:id" element={<Movie />} />
             <Route path="/show/:id" element={<Show />} />
           </Routes>

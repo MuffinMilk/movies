@@ -9,6 +9,9 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .bg-radial-vignette {
+    background: radial-gradient(circle, transparent 20%, rgba(0, 0, 0, 0.95) 85%);
+  }
 }
 
 @theme {
@@ -18,4 +21,14 @@
 body {
   background-color: #000;
   color: #fff;
+}
+
+@keyframes scaleX {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+.animate-scale-x {
+  animation: scaleX 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: center;
 }

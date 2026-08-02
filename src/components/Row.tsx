@@ -67,7 +67,7 @@ export default function Row({ title, items, onRemoveItem }: RowProps) {
             return (
               <div 
                 key={`${isMovie ? 'movie' : 'tv'}-${item.id}-${index}`} 
-                className="w-[160px] md:w-[200px] lg:w-[220px] flex-none snap-start"
+                className="w-[130px] sm:w-[155px] md:w-[175px] lg:w-[185px] flex-none snap-start"
                 onContextMenu={(e) => {
                   if (onRemoveItem) {
                     e.preventDefault();

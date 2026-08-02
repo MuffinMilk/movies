@@ -15,13 +15,15 @@ import {
   searchMovies,
   searchShows,
   getImageUrl,
-  getMovieDetails,
-  getMovieRating
+  getMovieDetails
 } from '../lib/tmdb';
-import { getContinueWatching, removeFromContinueWatching } from '../lib/storage';
 import MovieCard from '../components/MovieCard';
 import ShowCard from '../components/ShowCard';
 import Row from '../components/Row';
+import Top10Row from '../components/Top10Row';
+import ChannelsRow from '../components/ChannelsRow';
+import LandscapeRow from '../components/LandscapeRow';
+import MediaDetailModal from '../components/MediaDetailModal';
 import { Loader2, Play, Info } from 'lucide-react';
 
 export default function Home() {
@@ -30,28 +32,21 @@ export default function Home() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [selectedMedia, setSelectedMedia] = useState<Movie | Show | null>(null);
+
   // Search state
   const [searchResults, setSearchResults] = useState<(Movie | Show)[]>([]);
   
-  // Netflix layout state
-  const [continueWatching, setContinueWatching] = useState<(Movie | Show)[]>([]);
+  // Layout states
   const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
   const [trending, setTrending] = useState<(Movie | Show)[]>([]);
   const [originals, setOriginals] = useState<Show[]>([]);
   const [topRated, setTopRated] = useState<Movie[]>([]);
   const [action, setAction] = useState<Movie[]>([]);
   const [comedy, setComedy] = useState<Movie[]>([]);
-  const [horror, setHorror] = useState<Movie[]>([]);
-  const [romance, setRomance] = useState<Movie[]>([]);
 
   const [heroMovies, setHeroMovies] = useState<Movie[]>([]);
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-
-  const handleRemoveFromContinueWatching = (id: number) => {
-    removeFromContinueWatching(id);
-    setContinueWatching(getContinueWatching());
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,35 +55,26 @@ export default function Home() {
       
       try {
         if (query) {
-          // If searching, fetch both movies and shows and combine them
           const [movieRes, showRes] = await Promise.all([
             searchMovies(query),
             searchShows(query)
           ]);
           setSearchResults([...movieRes, ...showRes].sort((a, b) => b.vote_average - a.vote_average));
         } else {
-          // Load continue watching from local storage
-          setContinueWatching(getContinueWatching());
-
-          // Fetch all Netflix rows
           const [
             nowPlayingData,
             trendingData,
             originalsData,
             topRatedData,
             actionData,
-            comedyData,
-            horrorData,
-            romanceData
+            comedyData
           ] = await Promise.all([
             getNowPlayingMovies(),
             getTrending(),
             getNetflixOriginals(),
             getTopRatedMovies(),
             getActionMovies(),
-            getComedyMovies(),
-            getHorrorMovies(),
-            getRomanceMovies()
+            getComedyMovies()
           ]);
           
           setNowPlaying(nowPlayingData);
@@ -97,10 +83,8 @@ export default function Home() {
           setTopRated(topRatedData);
           setAction(actionData);
           setComedy(comedyData);
-          setHorror(horrorData);
-          setRomance(romanceData);
 
-          // Fetch custom hero movies
+          // Fetch hero movies
           const heroIds = ['1083381', '1339713', '936075', '931285'];
           const heroDataPromises = heroIds.map(id => getMovieDetails(id).catch(() => null));
           const resolvedHeroData = (await Promise.all(heroDataPromises)).filter(m => m !== null) as Movie[];
@@ -120,7 +104,7 @@ export default function Home() {
     if (heroMovies.length > 1) {
       const interval = setInterval(() => {
         setCurrentHeroIndex((prev) => (prev + 1) % heroMovies.length);
-      }, 7000); // Switch every 7 seconds
+      }, 7000);
       return () => clearInterval(interval);
     }
   }, [heroMovies.length]);
@@ -128,7 +112,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+        <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
       </div>
     );
   }
@@ -146,7 +130,7 @@ export default function Home() {
   // SEARCH RESULTS VIEW
   if (query) {
     return (
-      <div className="container mx-auto px-4 py-24">
+      <div className="container mx-auto px-4 pt-28 pb-16">
         <h1 className="text-3xl font-bold text-white mb-8">
           Search Results for "{query}"
         </h1>
@@ -169,21 +153,29 @@ export default function Home() {
     );
   }
 
-  // NETFLIX LAYOUT VIEW
   const featuredItem = heroMovies.length > 0 ? heroMovies[currentHeroIndex] : (nowPlaying.length > 0 ? nowPlaying[0] : null);
 
   return (
-    <div className="w-full pb-12">
+    <div className="w-full pb-16 pt-20 px-4 sm:px-8 max-w-[1700px] mx-auto">
+      {/* Detail Modal */}
+      {selectedMedia && (
+        <MediaDetailModal 
+          item={selectedMedia} 
+          type={'title' in selectedMedia ? 'movie' : 'show'} 
+          onClose={() => setSelectedMedia(null)} 
+        />
+      )}
+
       {/* Hero Section */}
       {featuredItem && (
-        <div className="relative w-full h-[60vh] min-h-[500px] mb-8 overflow-hidden rounded-2xl border border-white/5 shadow-2xl">
+        <div className="relative w-full h-[52vh] min-h-[420px] max-h-[600px] mb-8 overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-black">
           <AnimatePresence mode="wait">
             <motion.div
               key={featuredItem.id}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.5 }}
+              transition={{ duration: 1.2 }}
               className="absolute inset-0"
             >
               <img 
@@ -191,51 +183,47 @@ export default function Home() {
                 alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-transparent to-transparent flex" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f0f]/90 via-[#0f0f0f]/40 to-transparent" />
+              {/* Radial and bottom gradient overlays for dark ambiance */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
               
-              <div className="absolute bottom-12 left-0 w-full px-8 md:px-12 flex flex-col items-start z-10">
+              <div className="absolute bottom-12 left-0 w-full px-6 sm:px-12 flex flex-col items-start z-10 max-w-3xl">
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.8 }}
-                  className="max-w-2xl"
+                  transition={{ delay: 0.3, duration: 0.8 }}
                 >
                   {(featuredItem as any)?.images?.logos?.length > 0 ? (
                     <img
                       src={getImageUrl((featuredItem as any).images.logos[0].file_path, 'w500')}
                       alt={'title' in featuredItem ? featuredItem.title : featuredItem.name}
-                      className="max-w-[400px] w-full h-auto object-contain mb-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"
+                      className="max-w-[320px] sm:max-w-[420px] w-full h-auto object-contain mb-4 filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.9)]"
                     />
                   ) : (
-                    <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] logo-text">
-                      <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-100 to-white">
-                        {'title' in featuredItem ? featuredItem.title : featuredItem.name}
-                      </span>
-                    </h2>
+                    <h1 className="text-4xl sm:text-6xl font-black text-white mb-3 tracking-tight uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                      {'title' in featuredItem ? featuredItem.title : featuredItem.name}
+                    </h1>
                   )}
-                  {getMovieRating((featuredItem as any)?.release_dates) && (
-                    <div className="mb-4">
-                      <span className="px-3 py-1 rounded-sm bg-white/20 border border-white/30 text-xs font-bold text-white shadow-lg backdrop-blur-md">
-                        {getMovieRating((featuredItem as any).release_dates)}
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed">
-                    {featuredItem.overview}
+
+                  <p className="text-gray-300 text-sm sm:text-base line-clamp-3 mb-6 drop-shadow-md font-medium leading-relaxed max-w-xl">
+                    {featuredItem.overview || "Avatar Aang, the world's last Airbender, learns of an ancient power that could save his culture from extinction. With the help of his friends, he embarks on an unforgettable journey."}
                   </p>
+
                   <div className="flex items-center gap-3">
-                    <Link 
-                      to={`/${'title' in featuredItem ? 'movie' : 'show'}/${featuredItem.id}`} 
-                      className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2 rounded-md font-bold text-sm transition-all"
-                    >
-                      <Play className="w-4 h-4 fill-current" />
-                      Play
-                    </Link>
                     <button 
-                      className="flex items-center justify-center bg-white/10 text-white hover:bg-white/20 border border-white/20 w-9 h-9 rounded-md transition-all backdrop-blur-md"
+                      onClick={() => setSelectedMedia(featuredItem)}
+                      className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-lg hover:scale-105 cursor-pointer"
                     >
-                      <span className="text-lg font-light leading-none">+</span>
+                      <Play className="w-4 h-4 fill-black text-black" />
+                      Watch now
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedMedia(featuredItem)}
+                      className="flex items-center justify-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/20 px-6 py-2.5 rounded-full font-bold text-sm transition-all backdrop-blur-md shadow-lg hover:scale-105 cursor-pointer"
+                    >
+                      <Info className="w-4 h-4 text-white" />
+                      More info
                     </button>
                   </div>
                 </motion.div>
@@ -245,13 +233,13 @@ export default function Home() {
 
           {/* Hero Indicator Dots */}
           {heroMovies.length > 1 && (
-            <div className="absolute bottom-4 right-8 z-20 flex gap-2">
+            <div className="absolute bottom-6 right-8 z-20 flex gap-2">
               {heroMovies.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentHeroIndex(idx)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    idx === currentHeroIndex ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/70'
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    idx === currentHeroIndex ? 'bg-white w-6' : 'bg-white/30 hover:bg-white/60 w-2'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -261,23 +249,36 @@ export default function Home() {
         </div>
       )}
 
-      {/* Rows */}
-      <div className="flex flex-col gap-6 relative z-20">
-        {continueWatching.length > 0 && (
-          <Row 
-            title="Continue Watching" 
-            items={continueWatching} 
-            onRemoveItem={handleRemoveFromContinueWatching}
-          />
-        )}
-        <Row title="In theater now" items={nowPlaying.slice(1)} />
-        <Row title="Trending Now" items={trending} />
-        <Row title="Awdrex Originals" items={originals} />
-        <Row title="Top Rated" items={topRated} />
-        <Row title="Action Thrillers" items={action} />
-        <Row title="Comedies" items={comedy} />
-        <Row title="Scary Movies" items={horror} />
-        <Row title="Romance" items={romance} />
+      {/* Featured Landscape Carousel */}
+      <LandscapeRow items={nowPlaying.length > 0 ? nowPlaying : (heroMovies.length > 0 ? heroMovies : trending as Movie[])} />
+
+      {/* Channels & Apps */}
+      <ChannelsRow />
+
+      {/* Top 10 TV Shows */}
+      <Top10Row title="Top 10 TV Shows" items={originals.length > 0 ? originals : (trending as Show[])} />
+
+      {/* Top 10 Movies */}
+      <Top10Row title="Top 10 Movies" items={topRated.length > 0 ? topRated : nowPlaying} />
+
+      {/* Popular Movies */}
+      <div className="mb-10">
+        <Row title="Popular Movies" items={trending.filter(i => 'title' in i)} />
+      </div>
+
+      {/* Popular Shows */}
+      <div className="mb-10">
+        <Row title="Popular TV Shows" items={trending.filter(i => !('title' in i))} />
+      </div>
+
+      {/* Action Movies */}
+      <div className="mb-10">
+        <Row title="Action Blockbusters" items={action} />
+      </div>
+
+      {/* Comedy */}
+      <div className="mb-10">
+        <Row title="Comedy Hits" items={comedy} />
       </div>
     </div>
   );
