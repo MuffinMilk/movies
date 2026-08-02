@@ -45,6 +45,32 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [walkthroughStep, setWalkthroughStep] = useState(0);
 
+  // Stream Status & Automated Provider Fallback Loop State
+  const [streamStatusText, setStreamStatusText] = useState<string | null>("Starting video...");
+
+  useEffect(() => {
+    setStreamStatusText("Starting video...");
+    const timeout = setTimeout(() => {
+      const currentIndex = sources.findIndex(s => s.id === selectedSource.id);
+      if (currentIndex !== -1 && currentIndex < sources.length - 2 && selectedSource.id !== 'jellyfin') {
+        const nextSource = sources[currentIndex + 1];
+        setStreamStatusText("Trying another loaded source...");
+        setSelectedSource(nextSource);
+      } else {
+        setTimeout(() => setStreamStatusText(null), 1500);
+      }
+    }, 4500);
+
+    const readyTimeout = setTimeout(() => {
+      setStreamStatusText(null);
+    }, 6500);
+
+    return () => {
+      clearTimeout(timeout);
+      clearTimeout(readyTimeout);
+    };
+  }, [selectedSource.id, tmdbId]);
+
   // Fetch Media Logo
   useEffect(() => {
     let isMounted = true;
@@ -168,6 +194,17 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
       ref={containerRef}
       className="fixed inset-0 bg-black z-50 flex flex-col justify-between overflow-hidden select-none font-sans"
     >
+      {/* Bottom-left Stream Status Toast */}
+      {streamStatusText && (
+        <div className="absolute bottom-20 left-6 z-40 bg-black/90 backdrop-blur-xl border border-white/15 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-fade-in pointer-events-none">
+          <div className="w-4 h-4 rounded-full border-2 border-purple-500 border-t-transparent animate-spin shrink-0" />
+          <div>
+            <div className="text-xs font-bold text-white tracking-wide">{streamStatusText}</div>
+            <div className="text-[10px] text-purple-300">Provider: {selectedSource.name}</div>
+          </div>
+        </div>
+      )}
+
       {/* Background Video / Embedded Stream Player */}
       <div className="absolute inset-0 bg-black flex items-center justify-center">
         {selectedSource.id === 'jellyfin' ? (
