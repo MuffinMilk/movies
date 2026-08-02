@@ -7,9 +7,9 @@ export interface Source {
 }
 
 export const sources: Source[] = [
-  { id: 'vidlink', name: 'VidLink', isFrench: false, url: 'https://vidlink.pro/movie/{id}?primaryColor=3b82f6&autoplay=true', tvUrl: 'https://vidlink.pro/tv/{id}/{season}/{episode}?primaryColor=3b82f6&autoplay=true' },
-  { id: 'vidsrccc', name: 'VidSrc CC', isFrench: false, url: 'https://vidsrc.cc/v2/embed/movie/{id}', tvUrl: 'https://vidsrc.cc/v2/embed/tv/{id}/{season}/{episode}' },
-  { id: 'vidsrcme', name: 'VidSrc ME', isFrench: false, url: 'https://vidsrc.me/embed/movie?tmdb={id}', tvUrl: 'https://vidsrc.me/embed/tv?tmdb={id}&season={season}&episode={episode}' },
-  { id: '2embed', name: '2Embed', isFrench: false, url: 'https://www.2embed.cc/embed/{id}', tvUrl: 'https://www.2embed.cc/embedtv/{id}&s={season}&e={episode}' },
+  { id: 'byteful', name: 'Byteful Stream', isFrench: false, url: 'https://streamprovider.byteful.me/?tmdbId={id}', tvUrl: 'https://streamprovider.byteful.me/?tmdbId={id}&season={season}&episode={episode}' },
+  { id: 'vidsrcstream', name: 'VidSrc Stream HLS', isFrench: false, url: 'https://vidsrc.stream/m3u8/{id}.m3u8', tvUrl: 'https://vidsrc.stream/m3u8/{id}/{season}/{episode}.m3u8' },
+  { id: 'vidlink', name: 'VidLink Embed', isFrench: false, url: 'https://vidlink.pro/movie/{id}?primaryColor=3b82f6&autoplay=true', tvUrl: 'https://vidlink.pro/tv/{id}/{season}/{episode}?primaryColor=3b82f6&autoplay=true' },
   { id: 'jellyfin', name: 'Custom Jellyfin / Local Server', isFrench: false, url: '{customUrl}', tvUrl: '{customUrl}' }
 ];
+
