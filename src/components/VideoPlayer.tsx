@@ -111,6 +111,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [speed, setSpeed] = useState('Normal');
   const [autoplayNext, setAutoplayNext] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -133,25 +134,31 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const streamUrl = getStreamUrl();
   const iframeUrl = streamUrl;
 
+  // Reset error when source or stream URL changes
+  useEffect(() => {
+    setStreamError(null);
+  }, [streamUrl, selectedSource.id]);
+
   const isEmbedSource = selectedSource.id === 'vidlink' || 
     selectedSource.id === 'vidsrccc' || 
     selectedSource.id === 'vidsrcme' || 
     selectedSource.id === '2embed' || 
     selectedSource.id.includes('embed') || 
-    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful' && selectedSource.id !== 'muxsample');
+    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful' && selectedSource.id !== 'muxsample' && selectedSource.id !== 'backupmp4');
 
   // HLS.js integration for proxy stream endpoints
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isEmbedSource || selectedSource.id === 'jellyfin') return;
 
-    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me') || selectedSource.id === 'muxsample')) {
+    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me') || selectedSource.id === 'muxsample' || selectedSource.id === 'backupmp4')) {
       const hls = new Hls();
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(err => console.log("Autoplay error:", err));
         setIsPlaying(true);
+        setStreamError(null);
       });
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error("HLS Error Details:", data.details, "Fatal:", data.fatal, "Response Code:", (data as any).response?.code);
@@ -165,6 +172,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
               break;
             default:
               hls.destroy();
+              setStreamError("Server offline, try switching servers in the top right");
               break;
           }
         }
@@ -337,6 +345,30 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
           />
+        )}
+
+        {streamError && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/90 p-6 text-center animate-fade-in">
+            <div className="max-w-md bg-zinc-900/90 border border-white/10 p-8 rounded-3xl shadow-2xl space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">{streamError}</h3>
+              <p className="text-xs text-gray-400">
+                The current stream provider could not load video chunks. Please select another source from the dropdown menu in the top right.
+              </p>
+              <button
+                onClick={() => {
+                  const backup = sources.find(s => s.id === 'backupmp4') || sources[0];
+                  setSelectedSource(backup);
+                  setStreamError(null);
+                }}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
+              >
+                Switch to Backup Stream
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
