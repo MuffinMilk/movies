@@ -45,38 +45,20 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [walkthroughStep, setWalkthroughStep] = useState(0);
 
-  // Stream Status & Automated Provider Fallback Loop State
+  // Stream Status Toast State
   const [streamStatusText, setStreamStatusText] = useState<string | null>("Starting video...");
   const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
 
-  const switchToNextSource = () => {
-    if (selectedSource.id === 'jellyfin') return;
-    const nonJellyfinSources = sources.filter(s => s.id !== 'jellyfin');
-    const currentIdx = nonJellyfinSources.findIndex(s => s.id === selectedSource.id);
-    if (currentIdx !== -1 && currentIdx < nonJellyfinSources.length - 1) {
-      const nextSource = nonJellyfinSources[currentIdx + 1];
-      setStreamStatusText("Trying another loaded source...");
-      setSelectedSource(nextSource);
-      setIframeLoaded(false);
-    } else {
-      setTimeout(() => setStreamStatusText(null), 2000);
-    }
-  };
-
   useEffect(() => {
     setStreamStatusText("Starting video...");
-    setIframeLoaded(false);
-
     const timeout = setTimeout(() => {
-      if (!iframeLoaded && selectedSource.id !== 'jellyfin') {
-        switchToNextSource();
-      }
-    }, 4000);
+      setStreamStatusText(null);
+    }, 3000);
 
     return () => {
       clearTimeout(timeout);
     };
-  }, [selectedSource.id, tmdbId, currentSeason, currentEpisode]);
+  }, [tmdbId, currentSeason, currentEpisode, selectedSource.id]);
 
   // Fetch Media Logo
   useEffect(() => {
@@ -136,14 +118,12 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
     if (selectedSource.id === 'jellyfin') {
       return customJellyfinUrl;
     }
-    if (!tmdbId) return null;
+    const id = tmdbId;
+    if (!id) return '';
     if (type === 'movie') {
-      return selectedSource.url.replace('{id}', tmdbId.toString());
+      return `https://vidlink.pro/movie/${id}?primaryColor=3b82f6&autoplay=true`;
     } else {
-      return selectedSource.tvUrl
-        .replace('{id}', tmdbId.toString())
-        .replace('{season}', currentSeason.toString())
-        .replace('{episode}', currentEpisode.toString());
+      return `https://vidlink.pro/tv/${id}/${currentSeason}/${currentEpisode}?primaryColor=3b82f6&autoplay=true`;
     }
   };
 
@@ -267,9 +247,6 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
             onLoad={() => {
               setIframeLoaded(true);
               setStreamStatusText(null);
-            }}
-            onError={() => {
-              switchToNextSource();
             }}
           />
         ) : (
