@@ -50,12 +50,11 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
 
   useEffect(() => {
+    if (iframeLoaded) return;
     setStreamStatusText("Starting video...");
-    setIframeLoaded(false);
 
     const timeout = setTimeout(() => {
       if (!iframeLoaded && selectedSource.id !== 'jellyfin') {
-        const currentIndex = sources.findIndex(s => s.id === selectedSource.id);
         const nonJellyfinSources = sources.filter(s => s.id !== 'jellyfin');
         const currentNonJellyfinIndex = nonJellyfinSources.findIndex(s => s.id === selectedSource.id);
 
@@ -64,7 +63,6 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
           setStreamStatusText("Trying another loaded source...");
           setSelectedSource(nextSource);
         } else {
-          // If we've reached the end of sources, keep trying or hide toast after timeout
           setTimeout(() => setStreamStatusText(null), 2000);
         }
       }
@@ -73,7 +71,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
     return () => {
       clearTimeout(timeout);
     };
-  }, [selectedSource.id, tmdbId]);
+  }, [selectedSource.id, tmdbId, iframeLoaded]);
 
   // Fetch Media Logo
   useEffect(() => {
@@ -258,7 +256,8 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
             src={iframeUrl}
             className="w-full h-full border-0 relative z-10 bg-black"
             allowFullScreen={true}
-            allow="autoplay; fullscreen *; encrypted-media; picture-in-picture; accelerometer; gyroscope"
+            referrerPolicy="no-referrer"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             title={title}
             onLoad={() => {
               setIframeLoaded(true);
