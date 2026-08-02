@@ -133,10 +133,18 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const streamUrl = getStreamUrl();
   const iframeUrl = streamUrl;
 
+  const isEmbedSource = selectedSource.id === 'vidlink' || 
+    selectedSource.id === 'vidsrccc' || 
+    selectedSource.id === 'vidsrcme' || 
+    selectedSource.id === '2embed' || 
+    selectedSource.id.includes('vidsrc') || 
+    selectedSource.id.includes('embed') || 
+    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !videoUrl && selectedSource.id !== 'jellyfin');
+
   // HLS.js integration for direct .m3u8 / stream endpoints
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || selectedSource.id === 'vidlink' || selectedSource.id === 'jellyfin') return;
+    if (!video || isEmbedSource || selectedSource.id === 'jellyfin') return;
 
     if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('byteful.me'))) {
       const hls = new Hls();
@@ -265,7 +273,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
               </div>
             </div>
           </div>
-        ) : selectedSource.id === 'vidlink' ? (
+        ) : isEmbedSource ? (
           <iframe
             key={`${selectedSource.id}-${tmdbId}-${currentSeason}-${currentEpisode}`}
             src={streamUrl}
@@ -688,7 +696,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
       )}
 
       {/* BOTTOM CONTROL BAR */}
-      {!aiLoading && (
+      {!aiLoading && !isEmbedSource && selectedSource.id !== 'jellyfin' && (
         <div className="p-6 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent space-y-3">
           {/* Timeline Bar */}
           <div className="relative group/timeline flex items-center">
