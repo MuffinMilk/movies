@@ -49,29 +49,34 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [streamStatusText, setStreamStatusText] = useState<string | null>("Starting video...");
   const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
 
+  const switchToNextSource = () => {
+    if (selectedSource.id === 'jellyfin') return;
+    const nonJellyfinSources = sources.filter(s => s.id !== 'jellyfin');
+    const currentIdx = nonJellyfinSources.findIndex(s => s.id === selectedSource.id);
+    if (currentIdx !== -1 && currentIdx < nonJellyfinSources.length - 1) {
+      const nextSource = nonJellyfinSources[currentIdx + 1];
+      setStreamStatusText("Trying another loaded source...");
+      setSelectedSource(nextSource);
+      setIframeLoaded(false);
+    } else {
+      setTimeout(() => setStreamStatusText(null), 2000);
+    }
+  };
+
   useEffect(() => {
-    if (iframeLoaded) return;
     setStreamStatusText("Starting video...");
+    setIframeLoaded(false);
 
     const timeout = setTimeout(() => {
       if (!iframeLoaded && selectedSource.id !== 'jellyfin') {
-        const nonJellyfinSources = sources.filter(s => s.id !== 'jellyfin');
-        const currentNonJellyfinIndex = nonJellyfinSources.findIndex(s => s.id === selectedSource.id);
-
-        if (currentNonJellyfinIndex !== -1 && currentNonJellyfinIndex < nonJellyfinSources.length - 1) {
-          const nextSource = nonJellyfinSources[currentNonJellyfinIndex + 1];
-          setStreamStatusText("Trying another loaded source...");
-          setSelectedSource(nextSource);
-        } else {
-          setTimeout(() => setStreamStatusText(null), 2000);
-        }
+        switchToNextSource();
       }
     }, 4000);
 
     return () => {
       clearTimeout(timeout);
     };
-  }, [selectedSource.id, tmdbId, iframeLoaded]);
+  }, [selectedSource.id, tmdbId, currentSeason, currentEpisode]);
 
   // Fetch Media Logo
   useEffect(() => {
@@ -255,13 +260,16 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
             key={`${selectedSource.id}-${tmdbId}-${currentSeason}-${currentEpisode}`}
             src={iframeUrl}
             className="w-full h-full border-0 relative z-10 bg-black"
-            allowFullScreen={true}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             referrerPolicy="no-referrer"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allow="autoplay; encrypted-media; fullscreen"
             title={title}
             onLoad={() => {
               setIframeLoaded(true);
               setStreamStatusText(null);
+            }}
+            onError={() => {
+              switchToNextSource();
             }}
           />
         ) : (
