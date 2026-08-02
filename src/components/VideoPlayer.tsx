@@ -138,20 +138,36 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
     selectedSource.id === 'vidsrcme' || 
     selectedSource.id === '2embed' || 
     selectedSource.id.includes('embed') || 
-    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('corsproxy') && !streamUrl.includes('allorigins') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful');
+    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful');
 
-  // HLS.js integration for direct .m3u8 / stream endpoints
+  // HLS.js integration for proxy stream endpoints
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isEmbedSource || selectedSource.id === 'jellyfin') return;
 
-    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('byteful.me') || streamUrl.includes('corsproxy') || streamUrl.includes('allorigins'))) {
+    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me'))) {
       const hls = new Hls();
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(err => console.log("Autoplay error:", err));
         setIsPlaying(true);
+      });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.warn("HLS error:", data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              hls.destroy();
+              break;
+          }
+        }
       });
       return () => {
         hls.destroy();
@@ -302,6 +318,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
         ) : (
           <video
             ref={videoRef}
+            src={videoUrl || (!Hls.isSupported() ? streamUrl : undefined)}
             className="w-full h-full object-contain relative z-10 bg-black"
             autoPlay
             controls={false}
