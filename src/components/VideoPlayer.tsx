@@ -259,10 +259,10 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
           <iframe
             key={`${selectedSource.id}-${tmdbId}-${currentSeason}-${currentEpisode}`}
             src={iframeUrl}
-            className="w-full h-full border-0 relative z-10 bg-black"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-            referrerPolicy="no-referrer"
-            allow="autoplay; encrypted-media; fullscreen"
+            className="w-full h-full border-0"
+            referrerPolicy="origin"
+            allowFullScreen={true}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             title={title}
             onLoad={() => {
               setIframeLoaded(true);
