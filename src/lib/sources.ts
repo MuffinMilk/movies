@@ -8,6 +8,13 @@ export interface Source {
 
 export const sources: Source[] = [
   { 
+    id: 'muxsample', 
+    name: 'Sample HLS Stream (Test)', 
+    isFrench: false, 
+    url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', 
+    tvUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
+  },
+  { 
     id: 'vidsrcstream', 
     name: 'VidSrc Stream HLS', 
     isFrench: false, 

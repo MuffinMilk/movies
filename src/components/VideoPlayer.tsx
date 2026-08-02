@@ -138,14 +138,14 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
     selectedSource.id === 'vidsrcme' || 
     selectedSource.id === '2embed' || 
     selectedSource.id.includes('embed') || 
-    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful');
+    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful' && selectedSource.id !== 'muxsample');
 
   // HLS.js integration for proxy stream endpoints
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isEmbedSource || selectedSource.id === 'jellyfin') return;
 
-    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me'))) {
+    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me') || selectedSource.id === 'muxsample')) {
       const hls = new Hls();
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
@@ -154,7 +154,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
         setIsPlaying(true);
       });
       hls.on(Hls.Events.ERROR, (event, data) => {
-        console.warn("HLS error:", data);
+        console.error("HLS Error Details:", data.details, "Fatal:", data.fatal, "Response Code:", (data as any).response?.code);
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
