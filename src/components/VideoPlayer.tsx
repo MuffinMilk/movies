@@ -47,27 +47,31 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
 
   // Stream Status & Automated Provider Fallback Loop State
   const [streamStatusText, setStreamStatusText] = useState<string | null>("Starting video...");
+  const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     setStreamStatusText("Starting video...");
-    const timeout = setTimeout(() => {
-      const currentIndex = sources.findIndex(s => s.id === selectedSource.id);
-      if (currentIndex !== -1 && currentIndex < sources.length - 2 && selectedSource.id !== 'jellyfin') {
-        const nextSource = sources[currentIndex + 1];
-        setStreamStatusText("Trying another loaded source...");
-        setSelectedSource(nextSource);
-      } else {
-        setTimeout(() => setStreamStatusText(null), 1500);
-      }
-    }, 4500);
+    setIframeLoaded(false);
 
-    const readyTimeout = setTimeout(() => {
-      setStreamStatusText(null);
-    }, 6500);
+    const timeout = setTimeout(() => {
+      if (!iframeLoaded && selectedSource.id !== 'jellyfin') {
+        const currentIndex = sources.findIndex(s => s.id === selectedSource.id);
+        const nonJellyfinSources = sources.filter(s => s.id !== 'jellyfin');
+        const currentNonJellyfinIndex = nonJellyfinSources.findIndex(s => s.id === selectedSource.id);
+
+        if (currentNonJellyfinIndex !== -1 && currentNonJellyfinIndex < nonJellyfinSources.length - 1) {
+          const nextSource = nonJellyfinSources[currentNonJellyfinIndex + 1];
+          setStreamStatusText("Trying another loaded source...");
+          setSelectedSource(nextSource);
+        } else {
+          // If we've reached the end of sources, keep trying or hide toast after timeout
+          setTimeout(() => setStreamStatusText(null), 2000);
+        }
+      }
+    }, 4000);
 
     return () => {
       clearTimeout(timeout);
-      clearTimeout(readyTimeout);
     };
   }, [selectedSource.id, tmdbId]);
 
@@ -256,6 +260,10 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
             allowFullScreen={true}
             allow="autoplay; fullscreen *; encrypted-media; picture-in-picture; accelerometer; gyroscope"
             title={title}
+            onLoad={() => {
+              setIframeLoaded(true);
+              setStreamStatusText(null);
+            }}
           />
         ) : (
           <video
