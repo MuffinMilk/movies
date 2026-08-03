@@ -18,20 +18,25 @@ interface VideoPlayerProps {
   backdropPath?: string;
   posterPath?: string;
   videoUrl?: string;
+  iframeUrl?: string;
+  servers?: { name: string; url: string; type: 'hls' | 'iframe' }[];
   onClose: () => void;
 }
 
-export default function VideoPlayer({ title, type, tmdbId, season, episode, backdropPath, posterPath, videoUrl, onClose }: VideoPlayerProps) {
+export default function VideoPlayer({ title, type, tmdbId, season, episode, backdropPath, posterPath, videoUrl: initialVideoUrl, iframeUrl: initialIframeUrl, servers, onClose }: VideoPlayerProps) {
   // Source & Server State
   const [selectedSource, setSelectedSource] = useState<Source>(sources[0]);
+  const [activeLiveServer, setActiveLiveServer] = useState<{ name: string; url: string; type: 'hls' | 'iframe' } | null>(
+    servers && servers.length > 0 ? servers[0] : null
+  );
   const [currentSeason, setCurrentSeason] = useState<number>(season || 1);
   const [currentEpisode, setCurrentEpisode] = useState<number>(episode || 1);
-  const [useIframe, setUseIframe] = useState<boolean>(Boolean(tmdbId));
-  const [customJellyfinUrl, setCustomJellyfinUrl] = useState<string>(
-    () => localStorage.getItem('awdrex_jellyfin_url') || 'http://localhost:8096'
-  );
-  const [showJellyfinConfig, setShowJellyfinConfig] = useState<boolean>(false);
-  const [hideJellyfinOverlay, setHideJellyfinOverlay] = useState<boolean>(false);
+
+  // Active Video/Iframe URLs
+  const activeVideoUrl = activeLiveServer ? (activeLiveServer.type === 'hls' ? activeLiveServer.url : undefined) : initialVideoUrl;
+  const activeIframeUrl = activeLiveServer ? (activeLiveServer.type === 'iframe' ? activeLiveServer.url : undefined) : initialIframeUrl;
+
+  const [useIframe, setUseIframe] = useState<boolean>(Boolean(tmdbId || activeIframeUrl || (activeVideoUrl && (activeVideoUrl.includes('embed') || activeVideoUrl.includes('iframe') || activeVideoUrl.includes('.php') || activeVideoUrl.includes('dlhd') || activeVideoUrl.includes('daddylive')))));
 
   // Loading & Logo State
   const [aiLoading, setAiLoading] = useState(true);
@@ -45,21 +50,6 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   // Onboarding Walkthrough State (for first time viewers)
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [walkthroughStep, setWalkthroughStep] = useState(0);
-
-  // Stream Status Toast State
-  const [streamStatusText, setStreamStatusText] = useState<string | null>("Starting video...");
-  const [iframeLoaded, setIframeLoaded] = useState<boolean>(false);
-
-  useEffect(() => {
-    setStreamStatusText("Starting video...");
-    const timeout = setTimeout(() => {
-      setStreamStatusText(null);
-    }, 3000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [tmdbId, currentSeason, currentEpisode, selectedSource.id]);
 
   // Fetch Media Logo
   useEffect(() => {
@@ -111,90 +101,57 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   const [speed, setSpeed] = useState('Normal');
   const [autoplayNext, setAutoplayNext] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [streamError, setStreamError] = useState<string | null>(null);
+  const [showControls, setShowControls] = useState(true);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (isPlaying && !showSettings && !showSourceInspector && !showWalkthrough) {
+      idleTimerRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 2500);
+    }
+  };
+
+  useEffect(() => {
+    if (!isPlaying || showSettings || showSourceInspector || showWalkthrough) {
+      setShowControls(true);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    } else {
+      idleTimerRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 2500);
+    }
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [isPlaying, showSettings, showSourceInspector, showWalkthrough]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const getStreamUrl = () => {
-    if (videoUrl) return videoUrl;
-    if (selectedSource.id === 'jellyfin') return customJellyfinUrl;
-    const id = tmdbId;
-    if (!id) return '';
+  const getIframeUrl = () => {
+    if (activeIframeUrl) return activeIframeUrl;
+    if (activeVideoUrl && (activeVideoUrl.includes('embed') || activeVideoUrl.includes('iframe') || activeVideoUrl.includes('.php') || activeVideoUrl.includes('dlhd') || activeVideoUrl.includes('daddylive') || activeVideoUrl.includes('streamed') || activeVideoUrl.includes('vidsrc'))) {
+      return activeVideoUrl;
+    }
+    if (!tmdbId) return initialIframeUrl || null;
     if (type === 'movie') {
-      return selectedSource.url.replace('{id}', id.toString());
+      return selectedSource.url.replace('{id}', tmdbId.toString());
     } else {
       return selectedSource.tvUrl
-        .replace('{id}', id.toString())
+        .replace('{id}', tmdbId.toString())
         .replace('{season}', currentSeason.toString())
         .replace('{episode}', currentEpisode.toString());
     }
   };
 
-  const streamUrl = getStreamUrl();
-  const iframeUrl = streamUrl;
-
-  // Reset error when source or stream URL changes
-  useEffect(() => {
-    setStreamError(null);
-  }, [streamUrl, selectedSource.id]);
-
-  const isEmbedSource = selectedSource.id === 'vidlink' || 
-    selectedSource.id === 'vidsrccc' || 
-    selectedSource.id === 'vidsrcme' || 
-    selectedSource.id === '2embed' || 
-    selectedSource.id.includes('embed') || 
-    (!streamUrl.includes('.m3u8') && !streamUrl.includes('byteful.me') && !streamUrl.includes('proxy') && !videoUrl && selectedSource.id !== 'jellyfin' && selectedSource.id !== 'vidsrcstream' && selectedSource.id !== 'byteful' && selectedSource.id !== 'muxsample' && selectedSource.id !== 'backupmp4');
-
-  // HLS.js integration for proxy stream endpoints
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || isEmbedSource || selectedSource.id === 'jellyfin') return;
-
-    if (Hls.isSupported() && (streamUrl.includes('.m3u8') || streamUrl.includes('proxy') || streamUrl.includes('byteful.me') || selectedSource.id === 'muxsample' || selectedSource.id === 'backupmp4')) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(err => console.log("Autoplay error:", err));
-        setIsPlaying(true);
-        setStreamError(null);
-      });
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error("HLS Error Details:", data.details, "Fatal:", data.fatal, "Response Code:", (data as any).response?.code);
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls.recoverMediaError();
-              break;
-            default:
-              hls.destroy();
-              setStreamError("Server offline, try switching servers in the top right");
-              break;
-          }
-        }
-      });
-      return () => {
-        hls.destroy();
-      };
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
-        video.play().catch(err => console.log("Autoplay error:", err));
-        setIsPlaying(true);
-      });
-    } else {
-      video.src = streamUrl;
-      video.play().catch(err => console.log("Autoplay error:", err));
-      setIsPlaying(true);
-    }
-  }, [streamUrl, selectedSource.id, isEmbedSource]);
+  const iframeUrl = getIframeUrl();
 
   // Time Formatter
   const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
@@ -205,18 +162,102 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   };
 
   const handlePlayPause = () => {
-    if (videoRef.current) {
+    if (videoRef.current && !useIframe) {
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
-        videoRef.current.play().catch(err => console.log("Play error:", err));
-        setIsPlaying(true);
+        videoRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch((err) => {
+          console.warn("Play blocked or failed, retrying muted:", err);
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+          }
+        });
       }
     } else {
       setIsPlaying(!isPlaying);
     }
   };
+
+  useEffect(() => {
+    const streamTarget = activeVideoUrl || initialVideoUrl;
+    if (videoRef.current && !useIframe && streamTarget) {
+      let hls: Hls | null = null;
+      const targetUrl = streamTarget;
+
+      if (targetUrl.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            backBufferLength: 90
+          });
+          hls.loadSource(targetUrl);
+          hls.attachMedia(videoRef.current);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (videoRef.current) {
+              videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {
+                if (videoRef.current) {
+                  videoRef.current.muted = true;
+                  setIsMuted(true);
+                  videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+                }
+              });
+            }
+          });
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (data.fatal) {
+              console.warn("HLS playback fatal error, falling back to standard video", data);
+              if (videoRef.current) {
+                videoRef.current.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+                videoRef.current.play().catch(() => {});
+              }
+            }
+          });
+        } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+          videoRef.current.src = targetUrl;
+        }
+      } else {
+        videoRef.current.src = targetUrl;
+      }
+
+      return () => {
+        if (hls) {
+          hls.destroy();
+        }
+      };
+    }
+  }, [activeVideoUrl, initialVideoUrl, useIframe]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+      videoRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
+
+  useEffect(() => {
+    if (videoRef.current && !useIframe) {
+      if (isPlaying) {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play().catch(() => {});
+            }
+          });
+        }
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isPlaying, useIframe, activeVideoUrl, initialVideoUrl]);
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
@@ -253,122 +294,60 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
   return (
     <div 
       ref={containerRef}
+      onMouseMove={handleMouseMove}
       className="fixed inset-0 bg-black z-50 flex flex-col justify-between overflow-hidden select-none font-sans"
     >
-      {/* Bottom-left Stream Status Toast */}
-      {streamStatusText && (
-        <div className="absolute bottom-20 left-6 z-40 bg-black/90 backdrop-blur-xl border border-white/15 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-fade-in pointer-events-none">
-          <div className="w-4 h-4 rounded-full border-2 border-purple-500 border-t-transparent animate-spin shrink-0" />
-          <div>
-            <div className="text-xs font-bold text-white tracking-wide">{streamStatusText}</div>
-            <div className="text-[10px] text-purple-300">Provider: {selectedSource.name}</div>
-          </div>
-        </div>
-      )}
-
       {/* Background Video / Embedded Stream Player */}
       <div className="absolute inset-0 bg-black flex items-center justify-center">
-        {selectedSource.id === 'jellyfin' ? (
-          <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#0d0d12]">
-            <iframe
-              key={`${selectedSource.id}-${customJellyfinUrl}`}
-              src={customJellyfinUrl}
-              className="w-full h-full border-0 absolute inset-0 z-0 bg-black"
-              allowFullScreen={true}
-              allow="autoplay; fullscreen *; encrypted-media; picture-in-picture"
-              title={title}
-            />
-            {/* Direct fallback overlay if iframe is blocked by browser mixed content */}
-            <div className="relative z-10 max-w-lg bg-black/85 backdrop-blur-xl border border-white/10 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto border border-purple-500/30">
-                <Server className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Jellyfin Local Server Mode</h3>
-              <p className="text-xs text-gray-300 leading-relaxed">
-                If the screen above shows a gray document icon, your browser is blocking <code className="text-purple-300 font-mono bg-white/10 px-1 py-0.5 rounded">http://localhost</code> inside an <code className="text-purple-300 font-mono bg-white/10 px-1 py-0.5 rounded">https://</code> webpage due to security rules.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <a
-                  href={customJellyfinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>Launch Jellyfin in New Tab</span>
-                </a>
-                <button
-                  onClick={() => {
-                    const defaultSource = sources.find(s => s.id !== 'jellyfin') || sources[0];
-                    setSelectedSource(defaultSource);
-                  }}
-                  className="w-full sm:w-auto px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all"
-                >
-                  Switch to Free Stream Server
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : isEmbedSource ? (
+        {useIframe && iframeUrl ? (
           <iframe
             key={`${selectedSource.id}-${tmdbId}-${currentSeason}-${currentEpisode}`}
-            src={streamUrl}
-            className="w-full h-full border-0"
-            referrerPolicy="origin"
+            src={iframeUrl}
+            className="w-full h-full border-0 relative z-10 bg-black"
             allowFullScreen={true}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allow="autoplay; fullscreen *; encrypted-media; picture-in-picture; accelerometer; gyroscope"
             title={title}
-            onLoad={() => {
-              setIframeLoaded(true);
-              setStreamStatusText(null);
-            }}
           />
         ) : (
           <video
             ref={videoRef}
-            src={videoUrl || (!Hls.isSupported() ? streamUrl : undefined)}
-            className="w-full h-full object-contain relative z-10 bg-black"
+            src={(activeVideoUrl || initialVideoUrl) && !(activeVideoUrl || initialVideoUrl)?.includes('.m3u8') ? (activeVideoUrl || initialVideoUrl) : undefined}
+            className="w-full h-full object-contain relative z-10"
             autoPlay
-            controls={false}
+            playsInline
+            loop
             muted={isMuted}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onLoadedMetadata={() => {
+              if (videoRef.current) {
+                if (videoRef.current.duration && !isNaN(videoRef.current.duration) && isFinite(videoRef.current.duration)) {
+                  setDuration(videoRef.current.duration);
+                }
+                videoRef.current.volume = volume;
+                videoRef.current.muted = isMuted;
+                videoRef.current.play().catch(() => {
+                  if (videoRef.current) {
+                    videoRef.current.muted = true;
+                    setIsMuted(true);
+                    videoRef.current.play().catch(() => {});
+                  }
+                });
+              }
+            }}
             onTimeUpdate={() => {
               if (videoRef.current) {
                 setCurrentTime(videoRef.current.currentTime);
               }
             }}
-            onLoadedMetadata={() => {
-              if (videoRef.current) {
-                setDuration(videoRef.current.duration);
-                setStreamStatusText(null);
+            onError={() => {
+              console.warn("Video stream load error, trying fallback stream...");
+              if (videoRef.current && !videoRef.current.src.includes('gtv-videos-bucket')) {
+                videoRef.current.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+                videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
               }
             }}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
           />
-        )}
-
-        {streamError && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/90 p-6 text-center animate-fade-in">
-            <div className="max-w-md bg-zinc-900/90 border border-white/10 p-8 rounded-3xl shadow-2xl space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
-                <ShieldAlert className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">{streamError}</h3>
-              <p className="text-xs text-gray-400">
-                The current stream provider could not load video chunks. Please select another source from the dropdown menu in the top right.
-              </p>
-              <button
-                onClick={() => {
-                  const backup = sources.find(s => s.id === 'backupmp4') || sources[0];
-                  setSelectedSource(backup);
-                  setStreamError(null);
-                }}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
-              >
-                Switch to Backup Stream
-              </button>
-            </div>
-          </div>
         )}
       </div>
 
@@ -588,7 +567,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
 
       {/* TOP OVERLAY HEADER */}
       {!aiLoading && (
-        <div className="p-4 sm:p-6 flex flex-wrap items-center justify-between gap-3 z-30 bg-gradient-to-b from-black/90 via-black/50 to-transparent">
+        <div className={`p-4 sm:p-6 flex flex-wrap items-center justify-between gap-3 z-30 bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <div className="flex items-center gap-3">
             <button 
               onClick={onClose}
@@ -611,14 +590,38 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
 
             <div className="flex flex-col">
               <h1 className="text-sm sm:text-lg font-extrabold text-white tracking-tight line-clamp-1">{title}</h1>
-              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
-                {type === 'movie' ? 'MOVIE' : `TV SHOW (S${currentSeason} E${currentEpisode})`}
+              <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                {!tmdbId ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block" />
+                    <span className="text-red-400 font-bold">LIVE STREAM</span>
+                  </>
+                ) : type === 'movie' ? (
+                  'MOVIE'
+                ) : (
+                  `TV SHOW (S${currentSeason} E${currentEpisode})`
+                )}
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Server Selector */}
+            {/* Quick Unmute Button if muted by browser autoplay */}
+            {isMuted && isPlaying && (
+              <button
+                onClick={() => {
+                  setIsMuted(false);
+                  if (videoRef.current) {
+                    videoRef.current.muted = false;
+                    videoRef.current.volume = volume || 0.8;
+                  }
+                }}
+                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-lg animate-bounce cursor-pointer"
+              >
+                <VolumeX className="w-3.5 h-3.5" /> Tap to Unmute
+              </button>
+            )}
+            {/* Server Selector for Movies/Shows */}
             {tmdbId && (
               <div className="flex items-center gap-2 bg-black/60 border border-white/10 rounded-xl px-3 py-1.5 backdrop-blur-md">
                 <Server className="w-3.5 h-3.5 text-cyan-400" />
@@ -627,12 +630,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
                   value={selectedSource.id}
                   onChange={(e) => {
                     const found = sources.find(s => s.id === e.target.value);
-                    if (found) {
-                      setSelectedSource(found);
-                      if (found.id === 'jellyfin') {
-                        setShowJellyfinConfig(true);
-                      }
-                    }
+                    if (found) setSelectedSource(found);
                   }}
                   className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer py-0.5"
                 >
@@ -642,27 +640,31 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
                     </option>
                   ))}
                 </select>
-            {selectedSource.id === 'jellyfin' && (
-              <div className="flex items-center gap-2">
-                <a 
-                  href={customJellyfinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold text-white transition-all shadow-lg cursor-pointer"
-                  title="Open Jellyfin in a new tab"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open Jellyfin Server</span>
-                </a>
-                <button 
-                  onClick={() => setShowJellyfinConfig(true)}
-                  className="p-1.5 hover:bg-white/10 rounded-xl text-purple-400 hover:text-purple-300 transition-colors border border-purple-500/30 bg-purple-500/10"
-                  title="Configure Jellyfin Server URL"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                </button>
               </div>
             )}
+
+            {/* Server Selector for Live Channels */}
+            {!tmdbId && servers && servers.length > 0 && (
+              <div className="flex items-center gap-2 bg-black/60 border border-white/10 rounded-xl px-3 py-1.5 backdrop-blur-md">
+                <Server className="w-3.5 h-3.5 text-red-500" />
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Stream:</span>
+                <select 
+                  value={activeLiveServer?.name || servers[0].name}
+                  onChange={(e) => {
+                    const found = servers.find(s => s.name === e.target.value);
+                    if (found) {
+                      setActiveLiveServer(found);
+                      setUseIframe(found.type === 'iframe' || found.url.includes('.php') || found.url.includes('embed'));
+                    }
+                  }}
+                  className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer py-0.5"
+                >
+                  {servers.map((srv, idx) => (
+                    <option key={idx} value={srv.name} className="bg-[#181818] text-white">
+                      {srv.name} ({srv.type.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -757,8 +759,8 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
       )}
 
       {/* BOTTOM CONTROL BAR */}
-      {!aiLoading && !isEmbedSource && selectedSource.id !== 'jellyfin' && (
-        <div className="p-6 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent space-y-3">
+      {!aiLoading && (
+        <div className={`p-6 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent space-y-3 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           {/* Timeline Bar */}
           <div className="relative group/timeline flex items-center">
             <input 
@@ -1093,79 +1095,6 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
                 className="px-6 py-2.5 rounded-full bg-white text-black font-bold text-xs hover:bg-gray-200 transition-all cursor-pointer shadow-lg"
               >
                 Close Inspector
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Jellyfin Server Configuration Modal */}
-      {showJellyfinConfig && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#181818] border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-white">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <Server className="w-5 h-5 text-purple-400" />
-                Connect Jellyfin Server
-              </h3>
-              <button 
-                onClick={() => setShowJellyfinConfig(false)} 
-                className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-xs text-gray-300 leading-relaxed">
-              Enter your local or hosted Jellyfin server address.
-            </p>
-
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-200 text-xs space-y-1.5">
-              <div className="font-bold flex items-center gap-1.5 text-amber-400">
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>Browser Security Notice (HTTP vs HTTPS)</span>
-              </div>
-              <p className="text-[11px] leading-relaxed text-amber-200/90">
-                Because this website is secured with <strong className="text-white font-mono">HTTPS</strong>, web browsers block unencrypted <strong className="text-white font-mono">http://localhost:8096</strong> inside embedded video frames (mixed content protection).
-              </p>
-              <div className="pt-1">
-                <a 
-                  href={customJellyfinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white transition-all shadow"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open {customJellyfinUrl} directly in New Tab</span>
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">
-                Server Address / URL:
-              </label>
-              <input 
-                type="text"
-                value={customJellyfinUrl}
-                onChange={(e) => setCustomJellyfinUrl(e.target.value)}
-                placeholder="e.g. http://localhost:8096 or https://myjellyfin.domain.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button 
-                onClick={() => setShowJellyfinConfig(false)} 
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-gray-200"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  localStorage.setItem('awdrex_jellyfin_url', customJellyfinUrl);
-                  setShowJellyfinConfig(false);
-                }} 
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-lg"
-              >
-                Save Server
               </button>
             </div>
           </div>

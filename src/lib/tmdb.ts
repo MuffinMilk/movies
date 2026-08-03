@@ -312,6 +312,64 @@ export const getMovieRating = (releaseDates?: { results: any[] }) => {
   return null;
 };
 
+export const getMoviesByCategoryOrGenre = async (category: string): Promise<Movie[]> => {
+  if (category === 'All Movies') {
+    const [p1, p2, top, now, action, comedy, horror, romance] = await Promise.all([
+      getPopularMovies(1),
+      getPopularMovies(2),
+      getTopRatedMovies(),
+      getNowPlayingMovies(),
+      getActionMovies(),
+      getComedyMovies(),
+      getHorrorMovies(),
+      getRomanceMovies(),
+    ]);
+    const combined = [...p1, ...p2, ...top, ...now, ...action, ...comedy, ...horror, ...romance];
+    const uniqueMap = new Map();
+    combined.forEach(m => {
+      if (m && m.id && !uniqueMap.has(m.id)) {
+        uniqueMap.set(m.id, m);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }
+
+  if (category === 'Popular') return getPopularMovies();
+  if (category === 'Top Rated') return getTopRatedMovies();
+  if (category === 'In Theaters') return getNowPlayingMovies();
+  if (category === 'Coming Soon') {
+    const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}`);
+    const data = await res.json();
+    return data.results || getPopularMovies();
+  }
+
+  const genreMap: Record<string, number> = {
+    'Action & Adventure': 28,
+    'Animation': 16,
+    'Comedy': 35,
+    'Crime': 80,
+    'Documentary': 99,
+    'Drama': 18,
+    'Family': 10751,
+    'Fantasy': 14,
+    'Horror': 27,
+    'Mystery': 9648,
+    'Romance': 10749,
+    'Sci-Fi': 878,
+    'Thriller': 53,
+  };
+
+  const genreId = genreMap[category];
+  if (genreId) {
+    const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}`);
+    if (!res.ok) throw new Error('Failed to fetch genre movies');
+    const data = await res.json();
+    return data.results || [];
+  }
+
+  return getPopularMovies();
+};
+
 export const getShowRating = (contentRatings?: { results: any[] }) => {
   if (!contentRatings?.results) return null;
   const usRating = contentRatings.results.find((r: any) => r.iso_3166_1 === 'US');

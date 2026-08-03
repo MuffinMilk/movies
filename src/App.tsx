@@ -7,6 +7,7 @@ import Search from './pages/Search';
 import Movies from './pages/Movies';
 import Shows from './pages/Shows';
 import Anime from './pages/Anime';
+import Live from './pages/Live';
 import WarningModal from './components/WarningModal';
 
 export default function App() {
@@ -18,7 +19,7 @@ export default function App() {
           <WarningModal />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/live" element={<Home />} />
+            <Route path="/live" element={<Live />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/shows" element={<Shows />} />
             <Route path="/anime" element={<Anime />} />
