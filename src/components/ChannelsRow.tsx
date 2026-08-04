@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Channel {
   id: string;
@@ -8,10 +9,19 @@ interface Channel {
 }
 
 export default function ChannelsRow({ onSelectChannel }: { onSelectChannel?: (channelId: string) => void }) {
+  const navigate = useNavigate();
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
   const handleImageError = (id: string) => {
     setFailedLogos(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleClick = (channelId: string) => {
+    if (onSelectChannel) {
+      onSelectChannel(channelId);
+    } else {
+      navigate(`/channel/${channelId}`);
+    }
   };
 
   const channels: Channel[] = [
@@ -158,7 +168,7 @@ export default function ChannelsRow({ onSelectChannel }: { onSelectChannel?: (ch
         {channels.map((channel) => (
           <button
             key={channel.id}
-            onClick={() => onSelectChannel?.(channel.id)}
+            onClick={() => handleClick(channel.id)}
             className="group h-24 sm:h-28 bg-[#141416] hover:bg-[#1f1f24] border border-white/10 hover:border-white/30 rounded-2xl p-3 flex items-center justify-center transition-all duration-300 hover:scale-105 shadow-xl cursor-pointer relative overflow-hidden"
             title={channel.name}
           >

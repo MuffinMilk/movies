@@ -704,12 +704,123 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
               </button>
             )}
 
+            {/* Settings Gear Toggle */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2.5 rounded-full transition-all border border-white/10 backdrop-blur-md cursor-pointer ${
+                  showSettings ? 'bg-white/20 text-white' : 'bg-black/60 text-gray-300 hover:text-white hover:bg-white/20'
+                }`}
+                title="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+              {/* SETTINGS POPOVER */}
+              {showSettings && (
+                <div className="absolute right-0 top-14 w-72 bg-[#181818] border border-white/10 rounded-2xl p-4 shadow-2xl z-50 text-sm space-y-3 animate-scale-up">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <span className="font-bold text-white text-base">Settings</span>
+                    <button 
+                      onClick={() => setShowSettings(false)}
+                      className="p-1 text-gray-400 hover:text-white rounded-full hover:bg-white/10 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    {/* Server */}
+                    <button 
+                      onClick={handleRescanAI}
+                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <RefreshCw className="w-4 h-4 text-cyan-400" />
+                        <span>Server</span>
+                      </div>
+                      <span className="text-gray-400 flex items-center gap-1">{selectedSource.name} <ChevronRight className="w-3 h-3" /></span>
+                    </button>
+
+                    {/* Quality */}
+                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold cursor-pointer">
+                      <div className="flex items-center gap-2.5">
+                        <Tv className="w-4 h-4 text-purple-400" />
+                        <span>Quality</span>
+                      </div>
+                      <span className="text-gray-400 flex items-center gap-1">{quality} <ChevronRight className="w-3 h-3" /></span>
+                    </button>
+
+                    {/* Subtitles */}
+                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold cursor-pointer">
+                      <div className="flex items-center gap-2.5">
+                        <Subtitles className="w-4 h-4 text-emerald-400" />
+                        <span>Subtitles</span>
+                      </div>
+                      <span className="text-gray-400 flex items-center gap-1">{subtitles} <ChevronRight className="w-3 h-3" /></span>
+                    </button>
+
+                    {/* Speed */}
+                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold cursor-pointer">
+                      <div className="flex items-center gap-2.5">
+                        <Gauge className="w-4 h-4 text-amber-400" />
+                        <span>Speed</span>
+                      </div>
+                      <span className="text-gray-400 flex items-center gap-1">{speed} <ChevronRight className="w-3 h-3" /></span>
+                    </button>
+                  </div>
+
+                  {/* Autoplay Toggle */}
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between p-2">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white">Autoplay next episode</span>
+                      <span className="text-[10px] text-gray-400">Turn this off before sleeping</span>
+                    </div>
+                    <button 
+                      onClick={() => setAutoplayNext(!autoplayNext)}
+                      className={`w-10 h-6 rounded-full p-1 transition-colors cursor-pointer ${autoplayNext ? 'bg-white' : 'bg-white/20'}`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-black transition-transform ${autoplayNext ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  {/* More Menu Actions */}
+                  <div className="pt-2 border-t border-white/10 space-y-1 text-xs font-semibold">
+                    <button 
+                      onClick={handleRescanAI}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-cyan-400 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Try another AI source</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all cursor-pointer">
+                      <Tv className="w-4 h-4" />
+                      <span>Cast to TV</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all cursor-pointer">
+                      <Flag className="w-4 h-4" />
+                      <span>Report an issue</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Fullscreen Button */}
+            <button 
+              onClick={toggleFullscreen}
+              className="p-2.5 rounded-full bg-black/60 hover:bg-white/20 text-gray-300 hover:text-white transition-all border border-white/10 backdrop-blur-md cursor-pointer"
+              title="Fullscreen"
+            >
+              {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            </button>
+
             <button 
               onClick={() => {
                 setWalkthroughStep(0);
                 setShowWalkthrough(true);
               }}
-              className="p-2.5 rounded-full bg-black/60 hover:bg-white/20 text-gray-300 hover:text-white transition-all border border-white/10 backdrop-blur-md"
+              className="p-2.5 rounded-full bg-black/60 hover:bg-white/20 text-gray-300 hover:text-white transition-all border border-white/10 backdrop-blur-md cursor-pointer"
               title="Help & Tour"
             >
               <HelpCircle className="w-5 h-5" />
@@ -758,205 +869,7 @@ export default function VideoPlayer({ title, type, tmdbId, season, episode, back
         </div>
       )}
 
-      {/* BOTTOM CONTROL BAR */}
-      {!aiLoading && (
-        <div className={`p-6 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent space-y-3 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          {/* Timeline Bar */}
-          <div className="relative group/timeline flex items-center">
-            <input 
-              type="range"
-              min={0}
-              max={duration}
-              value={currentTime}
-              onChange={handleSeek}
-              className="w-full h-1.5 bg-white/30 hover:h-2.5 rounded-full appearance-none cursor-pointer accent-white transition-all"
-            />
-          </div>
 
-          {/* Controls Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Play / Pause */}
-              <button 
-                onClick={handlePlayPause}
-                className="p-2 text-white hover:text-gray-300 transition-colors"
-              >
-                {isPlaying ? <Pause className="w-6 h-6 fill-white" /> : <Play className="w-6 h-6 fill-white" />}
-              </button>
-
-              {/* Skip 10s */}
-              <button 
-                onClick={() => {
-                  const newTime = Math.max(0, currentTime - 10);
-                  setCurrentTime(newTime);
-                  if (videoRef.current) videoRef.current.currentTime = newTime;
-                }}
-                className="p-2 text-gray-300 hover:text-white transition-colors"
-                title="Rewind 10s"
-              >
-                <RotateCcw className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => {
-                  const newTime = Math.min(duration, currentTime + 10);
-                  setCurrentTime(newTime);
-                  if (videoRef.current) videoRef.current.currentTime = newTime;
-                }}
-                className="p-2 text-gray-300 hover:text-white transition-colors"
-                title="Forward 10s"
-              >
-                <RotateCw className="w-5 h-5" />
-              </button>
-
-              {/* Smooth Horizontal Volume Slider on Hover (Screenshot 19) */}
-              <div className="relative group/volume flex items-center gap-2">
-                <button 
-                  onClick={() => setIsMuted(!isMuted)}
-                  className="p-2 text-gray-300 hover:text-white transition-colors"
-                >
-                  {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-                <div className="w-0 overflow-hidden group-hover/volume:w-24 transition-all duration-300 flex items-center">
-                  <input 
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => {
-                      setVolume(parseFloat(e.target.value));
-                      setIsMuted(false);
-                      if (videoRef.current) videoRef.current.volume = parseFloat(e.target.value);
-                    }}
-                    className="w-20 h-1 bg-white/40 hover:bg-white rounded-full appearance-none cursor-pointer accent-white"
-                  />
-                </div>
-              </div>
-
-              {/* Time Counter */}
-              <span className="text-xs font-bold text-gray-300 tracking-wider">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
-
-            {/* Right Side Control Tools */}
-            <div className="flex items-center gap-3 relative">
-              {/* Settings Gear Toggle */}
-              <button 
-                onClick={() => setShowSettings(!showSettings)}
-                className={`p-2.5 rounded-full transition-all ${
-                  showSettings ? 'bg-white/20 text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'
-                }`}
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-
-              {/* Fullscreen */}
-              <button 
-                onClick={toggleFullscreen}
-                className="p-2.5 rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition-all"
-                title="Fullscreen"
-              >
-                {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-              </button>
-
-              {/* DULO SETTINGS POPOVER (Screenshot 20) */}
-              {showSettings && (
-                <div className="absolute right-0 bottom-14 w-72 bg-[#181818] border border-white/10 rounded-2xl p-4 shadow-2xl z-50 text-sm space-y-3 animate-scale-up">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                    <span className="font-bold text-white text-base">Settings</span>
-                    <button 
-                      onClick={() => setShowSettings(false)}
-                      className="p-1 text-gray-400 hover:text-white rounded-full hover:bg-white/10"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-1">
-                    {/* Server */}
-                    <button 
-                      onClick={handleRescanAI}
-                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <RefreshCw className="w-4 h-4 text-cyan-400" />
-                        <span>Server</span>
-                      </div>
-                      <span className="text-gray-400 flex items-center gap-1">{selectedSource.name} <ChevronRight className="w-3 h-3" /></span>
-                    </button>
-
-                    {/* Quality */}
-                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold">
-                      <div className="flex items-center gap-2.5">
-                        <Tv className="w-4 h-4 text-purple-400" />
-                        <span>Quality</span>
-                      </div>
-                      <span className="text-gray-400 flex items-center gap-1">{quality} <ChevronRight className="w-3 h-3" /></span>
-                    </button>
-
-                    {/* Subtitles */}
-                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold">
-                      <div className="flex items-center gap-2.5">
-                        <Subtitles className="w-4 h-4 text-emerald-400" />
-                        <span>Subtitles</span>
-                      </div>
-                      <span className="text-gray-400 flex items-center gap-1">{subtitles} <ChevronRight className="w-3 h-3" /></span>
-                    </button>
-
-                    {/* Speed */}
-                    <button className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all text-xs font-semibold">
-                      <div className="flex items-center gap-2.5">
-                        <Gauge className="w-4 h-4 text-amber-400" />
-                        <span>Speed</span>
-                      </div>
-                      <span className="text-gray-400 flex items-center gap-1">{speed} <ChevronRight className="w-3 h-3" /></span>
-                    </button>
-                  </div>
-
-                  {/* Autoplay Toggle */}
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between p-2">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-white">Autoplay next episode</span>
-                      <span className="text-[10px] text-gray-400">Turn this off before sleeping</span>
-                    </div>
-                    <button 
-                      onClick={() => setAutoplayNext(!autoplayNext)}
-                      className={`w-10 h-6 rounded-full p-1 transition-colors ${autoplayNext ? 'bg-white' : 'bg-white/20'}`}
-                    >
-                      <div className={`w-4 h-4 rounded-full bg-black transition-transform ${autoplayNext ? 'translate-x-4' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-
-                  {/* More Menu Actions */}
-                  <div className="pt-2 border-t border-white/10 space-y-1 text-xs font-semibold">
-                    <button 
-                      onClick={handleRescanAI}
-                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-cyan-400 transition-all"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Try another AI source</span>
-                    </button>
-                    <button className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all">
-                      <Tv className="w-4 h-4" />
-                      <span>Cast to TV</span>
-                    </button>
-                    <button className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all">
-                      <Flag className="w-4 h-4" />
-                      <span>Report an issue</span>
-                    </button>
-                    <button className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-all">
-                      <HelpCircle className="w-4 h-4" />
-                      <span>Player help</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {/* EMBED SOURCE INSPECTOR MODAL */}
       {showSourceInspector && (
         <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">

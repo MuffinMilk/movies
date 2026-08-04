@@ -10,6 +10,7 @@ import Movies from './pages/Movies';
 import Shows from './pages/Shows';
 import Anime from './pages/Anime';
 import Live from './pages/Live';
+import Channel from './pages/Channel';
 import WarningModal from './components/WarningModal';
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/anime" element={<Anime />} />
             <Route path="/library" element={<Home />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/channel/:id" element={<Channel />} />
             <Route path="/movie/:id" element={<Movie />} />
             <Route path="/show/:id" element={<Show />} />
           </Routes>

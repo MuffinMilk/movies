@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShowDetails, getShowDetails, getSeasonDetails, getImageUrl } from '../lib/tmdb';
+import { ShowDetails, getShowDetails, getSeasonDetails, getImageUrl, getMediaLogo } from '../lib/tmdb';
 import { saveToContinueWatching } from '../lib/storage';
-import { ChevronLeft, Play, Search, SlidersHorizontal, Loader2, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Search, SlidersHorizontal, Loader2, Check } from 'lucide-react';
 import VideoPlayer from '../components/VideoPlayer';
 
 interface Episode {
@@ -20,6 +20,8 @@ export default function Show() {
   const navigate = useNavigate();
 
   const [show, setShow] = useState<ShowDetails | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,15 +32,28 @@ export default function Show() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
+  const seasonsNavRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchShow = async () => {
       if (!id) return;
       setLoading(true);
       setError(null);
+      setLogoFailed(false);
       try {
         const data = await getShowDetails(id);
         setShow(data);
         saveToContinueWatching(data);
+
+        // Extract or fetch official logo image
+        const logo = data.images?.logos?.find((l: any) => l.iso_639_1 === 'en')?.file_path || data.images?.logos?.[0]?.file_path;
+        if (logo) {
+          setLogoUrl(logo);
+        } else {
+          getMediaLogo(data.id, 'tv').then(l => {
+            if (l) setLogoUrl(l);
+          });
+        }
       } catch (err) {
         setError('Failed to load show details.');
       } finally {
@@ -112,6 +127,22 @@ export default function Show() {
   const releaseYear = show.first_air_date ? show.first_air_date.split('-')[0] : '2023';
   const totalSeasons = show.number_of_seasons || (show.seasons ? show.seasons.length : 1);
 
+  const seasonsToDisplay = show.seasons && show.seasons.length > 0
+    ? show.seasons.filter(s => s.season_number > 0).map(s => s.season_number)
+    : Array.from({ length: totalSeasons }, (_, i) => i + 1);
+
+  const scrollSeasonsLeft = () => {
+    if (seasonsNavRef.current) {
+      seasonsNavRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+    }
+  };
+
+  const scrollSeasonsRight = () => {
+    if (seasonsNavRef.current) {
+      seasonsNavRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+    }
+  };
+
   const filteredEpisodes = episodes.filter((ep) => {
     if (searchQuery.trim() && !ep.name.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -155,16 +186,27 @@ export default function Show() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 space-y-8 pt-8">
-        {/* Centered Show Title & Metadata (Matching Screenshot 3) */}
+        {/* Centered Show Title / Logo & Metadata */}
         <div className="text-center space-y-3">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-white drop-shadow-2xl max-w-4xl mx-auto leading-tight">
-            {show.name}
-          </h1>
+          {logoUrl && !logoFailed ? (
+            <div className="flex justify-center items-center py-2 max-w-lg mx-auto">
+              <img
+                src={getImageUrl(logoUrl, 'w500')}
+                alt={show.name}
+                className="max-h-28 sm:max-h-36 md:max-h-44 w-auto object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.95)] transition-all hover:scale-105"
+                onError={() => setLogoFailed(true)}
+              />
+            </div>
+          ) : (
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-white drop-shadow-2xl max-w-4xl mx-auto leading-tight">
+              {show.name}
+            </h1>
+          )}
 
           <div className="flex items-center justify-center gap-3 text-xs sm:text-sm font-semibold text-gray-400">
             <span>{releaseYear}</span>
             <span className="w-1 h-1 rounded-full bg-gray-500" />
-            <span>{totalSeasons} {totalSeasons === 1 ? 'Season' : 'Seasons'}</span>
+            <span>{seasonsToDisplay.length} {seasonsToDisplay.length === 1 ? 'Season' : 'Seasons'}</span>
           </div>
 
           {/* Season Title Header */}
@@ -174,7 +216,7 @@ export default function Show() {
             </h2>
           </div>
 
-          {/* Filters & Search Row (Matching Screenshot 3) */}
+          {/* Filters & Search Row */}
           <div className="flex items-center justify-center gap-3 pt-2">
             {/* Unwatched Filter Pill */}
             <button
@@ -214,22 +256,49 @@ export default function Show() {
           )}
         </div>
 
-        {/* Season Navigation Tabs (if multiple seasons) */}
-        {totalSeasons > 1 && (
-          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((sNum) => (
-              <button
-                key={sNum}
-                onClick={() => setSelectedSeason(sNum)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  selectedSeason === sNum
-                    ? 'bg-white text-black'
-                    : 'bg-[#18181c] hover:bg-[#222228] text-gray-400 hover:text-white border border-white/10'
-                }`}
-              >
-                Season {sNum}
-              </button>
-            ))}
+        {/* Season Navigation Tabs with Left and Right Scroll Arrows */}
+        {seasonsToDisplay.length > 1 && (
+          <div className="flex items-center justify-center gap-2 max-w-4xl mx-auto px-2 relative py-1">
+            {/* Left Arrow Button */}
+            <button
+              onClick={scrollSeasonsLeft}
+              className="p-2.5 rounded-full bg-[#18181c]/90 hover:bg-[#28282e] border border-white/15 text-white shadow-xl cursor-pointer transition-all hover:scale-110 active:scale-95 shrink-0 z-10"
+              title="Previous Seasons"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Scrollable Season Pills Container */}
+            <div
+              ref={seasonsNavRef}
+              className="flex items-center gap-2.5 overflow-x-auto py-2 px-1 scroll-smooth no-scrollbar flex-1 whitespace-nowrap"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {seasonsToDisplay.map((sNum) => (
+                <button
+                  key={sNum}
+                  onClick={() => setSelectedSeason(sNum)}
+                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 shadow-md ${
+                    selectedSeason === sNum
+                      ? 'bg-white text-black scale-105 shadow-white/10'
+                      : 'bg-[#18181c] hover:bg-[#222228] text-gray-300 hover:text-white border border-white/10'
+                  }`}
+                >
+                  Season {sNum}
+                </button>
+              ))}
+            </div>
+
+            {/* Right Arrow Button */}
+            <button
+              onClick={scrollSeasonsRight}
+              className="p-2.5 rounded-full bg-[#18181c]/90 hover:bg-[#28282e] border border-white/15 text-white shadow-xl cursor-pointer transition-all hover:scale-110 active:scale-95 shrink-0 z-10"
+              title="Next Seasons"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         )}
 

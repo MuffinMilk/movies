@@ -381,6 +381,148 @@ export const getMoviesByCategoryOrGenre = async (category: string): Promise<Movi
   return getPopularMovies();
 };
 
+export interface ChannelProvider {
+  id: string;
+  name: string;
+  providerId: number;
+  networkId?: number;
+  logoUrl: string;
+  description: string;
+}
+
+export const PROVIDERS: Record<string, ChannelProvider> = {
+  netflix: {
+    id: 'netflix',
+    name: 'Netflix',
+    providerId: 8,
+    networkId: 213,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
+    description: 'Stream unlimited movies, TV shows, documentaries, and Netflix originals.',
+  },
+  prime: {
+    id: 'prime',
+    name: 'Prime Video',
+    providerId: 119,
+    networkId: 1024,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Prime_Video.svg',
+    description: 'Watch Amazon Originals, blockbuster movies, and award-winning TV series.',
+  },
+  disney: {
+    id: 'disney',
+    name: 'Disney+',
+    providerId: 337,
+    networkId: 2739,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg',
+    description: 'The home of Disney, Pixar, Marvel, Star Wars, and National Geographic.',
+  },
+  hulu: {
+    id: 'hulu',
+    name: 'Hulu',
+    providerId: 15,
+    networkId: 453,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Hulu_Logo.svg',
+    description: 'Stream full seasons of exclusive series, current episodes, and hit movies.',
+  },
+  hbomax: {
+    id: 'hbomax',
+    name: 'Max (HBO)',
+    providerId: 1899,
+    networkId: 3186,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/17/HBO_Max_Logo.svg',
+    description: 'Stream iconic HBO series, Max Originals, and Warner Bros. blockbusters.',
+  },
+  appletv: {
+    id: 'appletv',
+    name: 'Apple TV+',
+    providerId: 350,
+    networkId: 2552,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/28/Apple_TV_Plus_Logo.svg',
+    description: 'Watch acclaimed Apple Original series, movies, and documentaries.',
+  },
+  paramount: {
+    id: 'paramount',
+    name: 'Paramount+',
+    providerId: 531,
+    networkId: 4330,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/81/Paramount%2B_logo.svg',
+    description: 'A mountain of entertainment from CBS, Showtime, Paramount Pictures, and MTV.',
+  },
+  peacock: {
+    id: 'peacock',
+    name: 'Peacock',
+    providerId: 386,
+    networkId: 3353,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/NBCUniversal_Peacock_Logo.svg',
+    description: 'Stream current NBC hits, live sports, news, and Peacock Originals.',
+  },
+  crunchyroll: {
+    id: 'crunchyroll',
+    name: 'Crunchyroll',
+    providerId: 283,
+    networkId: 1112,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Crunchyroll_Logo.svg',
+    description: 'The world’s largest anime library with thousands of anime series and movies.',
+  },
+  amc: {
+    id: 'amc',
+    name: 'AMC+',
+    providerId: 528,
+    networkId: 174,
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/AMC_Plus_logo.svg',
+    description: 'The best of AMC, BBC America, IFC, Sundance Now, and Shudder.',
+  },
+};
+
+export const getChannelMovies = async (channelId: string, page: number = 1): Promise<Movie[]> => {
+  const provider = PROVIDERS[channelId];
+  if (!provider) return getPopularMovies(page);
+
+  try {
+    let url = `${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_watch_providers=${provider.providerId}&watch_region=US&sort_by=popularity.desc&page=${page}`;
+    if (channelId === 'crunchyroll') {
+      url = `${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${page}`;
+    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch channel movies');
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      return getPopularMovies(page);
+    }
+    return data.results;
+  } catch (err) {
+    console.error('Error fetching channel movies:', err);
+    return getPopularMovies(page);
+  }
+};
+
+export const getChannelShows = async (channelId: string, page: number = 1): Promise<Show[]> => {
+  const provider = PROVIDERS[channelId];
+  if (!provider) return getPopularShows(page);
+
+  try {
+    let url = '';
+    if (provider.networkId) {
+      url = `${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_networks=${provider.networkId}&sort_by=popularity.desc&page=${page}`;
+    } else {
+      url = `${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_watch_providers=${provider.providerId}&watch_region=US&sort_by=popularity.desc&page=${page}`;
+    }
+    if (channelId === 'crunchyroll') {
+      url = `${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_genres=16&with_original_language=ja&sort_by=popularity.desc&page=${page}`;
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch channel shows');
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      return getPopularShows(page);
+    }
+    return data.results;
+  } catch (err) {
+    console.error('Error fetching channel shows:', err);
+    return getPopularShows(page);
+  }
+};
+
 export const getShowRating = (contentRatings?: { results: any[] }) => {
   if (!contentRatings?.results) return null;
   const usRating = contentRatings.results.find((r: any) => r.iso_3166_1 === 'US');
