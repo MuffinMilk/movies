@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Film, Star, Bookmark, Search, Menu, X } from 'lucide-react';
+import { Home, Tv, Film, Star, Search, Menu, X } from 'lucide-react';
 import LeftDrawer from './LeftDrawer';
 import AuthModal from './AuthModal';
 
-export default function Header() {
+interface HeaderProps {
+  onOpenProfiles?: () => void;
+}
+
+export default function Header({ onOpenProfiles }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
@@ -12,6 +16,35 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [activeProfile, setActiveProfile] = useState<{ name: string; avatarText: string } | null>(() => {
+    const saved = localStorage.getItem('dulo_active_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { name: 'Default', avatarText: 'D' };
+      }
+    }
+    return { name: 'Default', avatarText: 'D' };
+  });
+
+  useEffect(() => {
+    const handleProfileChange = () => {
+      const saved = localStorage.getItem('dulo_active_profile');
+      if (saved) {
+        try {
+          setActiveProfile(JSON.parse(saved));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleProfileChange);
+    // Poll briefly to catch same-window updates
+    const interval = setInterval(handleProfileChange, 1000);
+    return () => {
+      window.removeEventListener('storage', handleProfileChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,7 +68,6 @@ export default function Header() {
     { name: 'Movies', path: '/movies', icon: Film },
     { name: 'Shows', path: '/shows', icon: Tv },
     { name: 'Anime', path: '/anime', icon: Star },
-    { name: 'Library', path: '/library', icon: Bookmark },
   ];
 
   return (
@@ -134,13 +166,21 @@ export default function Header() {
 
             {/* User Profile / Sign In Pill (Matching Image 1) */}
             <button
-              onClick={() => setAuthModalOpen(true)}
+              onClick={() => {
+                if (onOpenProfiles) {
+                  onOpenProfiles();
+                } else {
+                  setAuthModalOpen(true);
+                }
+              }}
               className="flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-xs sm:text-sm text-gray-100 font-medium cursor-pointer shadow-sm"
             >
               <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-inner border border-white/20">
-                D
+                {activeProfile?.avatarText || 'D'}
               </div>
-              <span className="hidden sm:inline text-xs font-semibold text-gray-200">Sign in</span>
+              <span className="hidden sm:inline text-xs font-semibold text-gray-200">
+                {activeProfile?.name || 'Sign in'}
+              </span>
             </button>
           </div>
         </div>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   X, Play, Star, Share2, Film, MessageSquare, Eye, EyeOff,
-  Facebook, Twitter, Send, Globe, Check, ExternalLink
+  Facebook, Twitter, Send, Globe, Check, ExternalLink,
+  Tv, Heart, Bookmark, ListPlus
 } from 'lucide-react';
 import { Movie, Show, getImageUrl, getRecommendations, getMediaLogo, getMovieDetails, getShowDetails } from '../lib/tmdb';
 import VideoPlayer from './VideoPlayer';
@@ -13,6 +15,7 @@ interface MediaDetailModalProps {
 }
 
 export default function MediaDetailModal({ item, type, onClose }: MediaDetailModalProps) {
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState<Movie | Show | null>(item);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
@@ -135,15 +138,55 @@ export default function MediaDetailModal({ item, type, onClose }: MediaDetailMod
               </h1>
             )}
 
+            {/* TV Show Primary Action Row (Matching Screenshot 2) */}
+            {type === 'show' && (
+              <div className="flex items-center gap-2.5 pt-1">
+                <button 
+                  onClick={() => {
+                    navigate(`/show/${currentItem.id}`);
+                    onClose();
+                  }}
+                  className="flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs sm:text-sm transition-all shadow-md cursor-pointer hover:scale-105"
+                >
+                  <Tv className="w-4 h-4 text-gray-200" />
+                  <span>Episodes</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsPlayingVideo(true)}
+                  className="flex items-center gap-2 px-5 py-2 bg-white hover:bg-gray-200 text-black font-extrabold text-xs sm:text-sm rounded-full transition-all shadow-md hover:scale-105 cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-black" />
+                  <span>Play</span>
+                </button>
+
+                <button 
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-gray-200 hover:text-red-400 transition-all cursor-pointer"
+                  title="Favorite"
+                >
+                  <Heart className="w-4 h-4" />
+                </button>
+
+                <button 
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-gray-200 hover:text-white transition-all cursor-pointer"
+                  title="Add to Watchlist"
+                >
+                  <ListPlus className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Pill Action Badges Row */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button 
-                onClick={() => setIsPlayingVideo(true)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-200 text-black font-extrabold text-sm rounded-full transition-all shadow-2xl hover:scale-105 cursor-pointer"
-              >
-                <Play className="w-4 h-4 fill-black" />
-                <span>Play</span>
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {type === 'movie' && (
+                <button 
+                  onClick={() => setIsPlayingVideo(true)}
+                  className="flex items-center gap-2 px-6 py-2 bg-white hover:bg-gray-200 text-black font-extrabold text-sm rounded-full transition-all shadow-2xl hover:scale-105 cursor-pointer"
+                >
+                  <Play className="w-4 h-4 fill-black" />
+                  <span>Play</span>
+                </button>
+              )}
 
               <span className="px-3 py-1.5 bg-[#202020]/90 text-gray-200 font-bold text-xs rounded-full border border-white/10 shadow-md">
                 {releaseYear}
@@ -156,7 +199,7 @@ export default function MediaDetailModal({ item, type, onClose }: MediaDetailMod
               {trailerKey && (
                 <button 
                   onClick={() => setShowTrailerModal(true)}
-                  className="px-3.5 py-1.5 bg-[#202020]/90 hover:bg-[#303030] text-gray-200 font-bold text-xs rounded-full border border-white/10 flex items-center gap-1.5 transition-all shadow-md"
+                  className="px-3.5 py-1.5 bg-[#202020]/90 hover:bg-[#303030] text-gray-200 font-bold text-xs rounded-full border border-white/10 flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                 >
                   <Film className="w-3.5 h-3.5 text-cyan-400" />
                   <span>Trailer</span>
@@ -165,7 +208,7 @@ export default function MediaDetailModal({ item, type, onClose }: MediaDetailMod
 
               <button 
                 onClick={handleShare}
-                className="px-3.5 py-1.5 bg-[#202020]/90 hover:bg-[#303030] text-gray-200 font-bold text-xs rounded-full border border-white/10 flex items-center gap-1.5 transition-all shadow-md"
+                className="px-3.5 py-1.5 bg-[#202020]/90 hover:bg-[#303030] text-gray-200 font-bold text-xs rounded-full border border-white/10 flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied!' : 'Share'}</span>

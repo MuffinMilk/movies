@@ -1,5 +1,7 @@
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import ProfileSelector from './components/ProfileSelector';
 import Home from './pages/Home';
 import Movie from './pages/Movie';
 import Show from './pages/Show';
@@ -11,10 +13,18 @@ import Live from './pages/Live';
 import WarningModal from './components/WarningModal';
 
 export default function App() {
+  const [showProfileSelector, setShowProfileSelector] = useState(true);
+
   return (
     <Router>
       <div className="bg-[#0a0a0a] text-gray-200 font-sans selection:bg-white/30 min-h-screen relative overflow-x-hidden">
-        <Header />
+        {showProfileSelector && (
+          <ProfileSelector
+            onSelectProfile={() => setShowProfileSelector(false)}
+            onCancel={() => setShowProfileSelector(false)}
+          />
+        )}
+        <Header onOpenProfiles={() => setShowProfileSelector(true)} />
         <main className="w-full min-h-screen">
           <WarningModal />
           <Routes>

@@ -137,6 +137,17 @@ export const getShowDetails = async (id: string): Promise<ShowDetails> => {
   return res.json();
 };
 
+export const getSeasonDetails = async (showId: number | string, seasonNumber: number = 1): Promise<any> => {
+  try {
+    const res = await fetch(`${BASE_URL}/tv/${showId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to fetch season details:', err);
+    return null;
+  }
+};
+
 export const getMediaLogo = async (id: number | string, type: 'movie' | 'show' | 'tv' = 'movie'): Promise<string | null> => {
   try {
     const mediaType = type === 'show' ? 'tv' : type;

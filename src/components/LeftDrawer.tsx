@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Search, Home, Tv, Film, Star, Bookmark, 
+  Search, Home, Tv, Film, Star, 
   Compass, PlaySquare, Calendar, Grid, Map,
   X, User
 } from 'lucide-react';
@@ -13,6 +13,34 @@ interface LeftDrawerProps {
 
 export default function LeftDrawer({ isOpen, onClose }: LeftDrawerProps) {
   const location = useLocation();
+  const [activeProfile, setActiveProfile] = useState<{ name: string; avatarText: string } | null>(() => {
+    const saved = localStorage.getItem('dulo_active_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { name: 'Default', avatarText: 'D' };
+      }
+    }
+    return { name: 'Default', avatarText: 'D' };
+  });
+
+  useEffect(() => {
+    const handleProfileChange = () => {
+      const saved = localStorage.getItem('dulo_active_profile');
+      if (saved) {
+        try {
+          setActiveProfile(JSON.parse(saved));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleProfileChange);
+    const interval = setInterval(handleProfileChange, 1000);
+    return () => {
+      window.removeEventListener('storage', handleProfileChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <>
@@ -35,11 +63,13 @@ export default function LeftDrawer({ isOpen, onClose }: LeftDrawerProps) {
           <div className="flex items-center justify-between px-2 pt-1">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold text-base shadow-md border border-white/20">
-                A
+                {activeProfile?.avatarText || 'D'}
               </div>
               <div className="flex flex-col">
-                <span className="font-extrabold text-white text-base tracking-tight">Awdrex</span>
-                <span className="text-[11px] text-gray-400 font-medium">12:03 AM</span>
+                <span className="font-extrabold text-white text-base tracking-tight">
+                  {activeProfile?.name || 'Default'}
+                </span>
+                <span className="text-[11px] text-gray-400 font-medium">Profile</span>
               </div>
             </div>
             <button 
@@ -59,7 +89,6 @@ export default function LeftDrawer({ isOpen, onClose }: LeftDrawerProps) {
               { name: 'Movies', path: '/movies', icon: Film },
               { name: 'Shows', path: '/shows', icon: Tv },
               { name: 'Anime', path: '/anime', icon: Star },
-              { name: 'Library', path: '/library', icon: Bookmark },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
